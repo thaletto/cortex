@@ -1,7 +1,10 @@
 "use client";
+
 import Link from "next/link";
-import BorderGlow from "@/components/BorderGlow";
 import Image from "next/image";
+import { Cards, Card } from "fumadocs-ui/components/card";
+import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
+import { ArrowRight, Database, Zap, Layers, Cpu, Lock } from "lucide-react";
 
 function GitHubIcon({ size = 24 }: { size?: number }) {
   return (
@@ -11,41 +14,114 @@ function GitHubIcon({ size = 24 }: { size?: number }) {
   );
 }
 
+const features = [
+  {
+    icon: Database,
+    title: "Vector Storage",
+    description: "Store and retrieve embeddings with type-safe operations built on ZVec."
+  },
+  {
+    icon: Layers,
+    title: "Explicit Memory",
+    description: "Developer-controlled context management with full visibility into memory operations."
+  },
+  {
+    icon: Zap,
+    title: "Effect Native",
+    description: "Built entirely with Effect for robust error handling and composable workflows."
+  },
+  {
+    icon: Lock,
+    title: "Type-Safe",
+    description: "Full TypeScript support with generics for embedding types and search results."
+  },
+  {
+    icon: Cpu,
+    title: "Pluggable Backend",
+    description: "Swap storage implementations without changing your application logic."
+  },
+  {
+    icon: ArrowRight,
+    title: "Production Ready",
+    description: "Battle-tested patterns for AI applications with proven reliability."
+  }
+];
+
+const codeExample = `import { VectorStore, VectorStoreLive } from "@thaletto/cortex";
+
+const program = Effect.gen(function* () {
+  const store = yield* VectorStore;
+  
+  // Your embedding from an embedding model
+  const embedding = yield* getEmbedding("User prefers TypeScript");
+  
+  // Store a vector with metadata
+  yield* store.store("doc-1", embedding, {
+    content: "User prefers TypeScript",
+    category: "preferences",
+  });
+
+  // Search for similar vectors
+  const results = yield* store.search(embedding, {
+    limit: 5,
+  });
+});
+
+Effect.runPromise(program.pipe(Effect.provide(VectorStoreLive)));`;
+
 export default function HomePageContent() {
   return (
-    <BorderGlow className="flex flex-col justify-center text-center w-full max-w-sm sm:max-w-lg md:max-w-2xl m-auto px-4 py-6 sm:p-4">
-      <div className="flex items-center justify-center my-8">
-        <Image
-          src="/cortex-logo.svg"
-          alt="Logo"
-          width={256}
-          height={256}
-        />
-      </div>
-      <p className="text-base sm:text-lg text-gray-300 mb-4 px-2">
-        Developer-controlled context memory layer for Effect applications
-      </p>
-      <p className="text-sm sm:text-base text-gray-400 mb-4 px-2">
-        Vector storage for AI/LLM applications, built with Effect and ZVec.
-        Type-safe, pluggable, and designed for explicit memory management.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-2">
-        <Link
-          href="/docs"
-          className="inline-flex items-center justify-center w-full sm:w-auto rounded-lg bg-white text-black px-6 py-2.5 font-medium"
-        >
-          Get Started
-        </Link>
-        <Link
-          href="https://github.com/thaletto/cortex"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-lg border border-white/20 text-white px-6 py-2.5 font-medium"
-        >
-          <GitHubIcon size={18} />
-          GitHub
-        </Link>
-      </div>
-    </BorderGlow>
+    <div className="flex flex-col items-center w-full max-w-5xl mx-auto px-4 py-12 gap-16">
+      {/* Hero Section */}
+      <section className="flex flex-col items-center text-center gap-6 max-w-3xl">
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white">
+          Vector Storage for AI Applications
+        </h1>
+
+        <p className="text-lg sm:text-xl text-white/70 max-w-2xl">
+          Developer-controlled context memory layer for Effect applications.
+          Type-safe, pluggable, and designed for explicit memory management.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-3 mt-4">
+          <Link
+            href="/docs"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-white text-black px-6 py-2.5 font-medium transition-transform duration-160 ease-out hover:scale-[1.02] active:scale-[0.97]"
+          >
+            Get Started
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link
+            href="https://github.com/thaletto/cortex"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 text-white px-6 py-2.5 font-medium transition-colors duration-200 hover:bg-white/10"
+          >
+            <GitHubIcon size={18} />
+            GitHub
+          </Link>
+        </div>
+      </section>
+
+      {/* Code Example */}
+      <section className="w-full max-w-3xl">
+        <DynamicCodeBlock lang="typescript" code={codeExample} />
+      </section>
+
+      {/* Footer */}
+      <footer className="flex flex-wrap justify-center gap-4 text-sm">
+        <span className="text-white/50">
+          Made with ❤️{" "}
+          <Link
+            href="https://thaletto.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/70 hover:text-white/90 transition-colors"
+          >
+            Laxman K R
+          </Link>
+        </span>
+      </footer>
+    </div>
   );
 }
