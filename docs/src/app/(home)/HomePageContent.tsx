@@ -74,16 +74,16 @@ export default function HomePageContent() {
     <div className="flex flex-col items-center w-full max-w-5xl mx-auto px-4 py-12 gap-16">
       {/* Hero Section */}
       <section className="flex flex-col items-center text-center gap-6 max-w-3xl">
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white">
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white animate-in fade-in slide-in-from-bottom-4 duration-300 ease-out">
           Vector Storage for AI Applications
         </h1>
 
-        <p className="text-lg sm:text-xl text-white/70 max-w-2xl">
+        <p className="text-lg sm:text-xl text-white/70 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-300 ease-out" style={{ animationDelay: "50ms", animationFillMode: "backwards" }}>
           Developer-controlled context memory layer for Effect applications.
           Type-safe, pluggable, and designed for explicit memory management.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-3 mt-4">
+        <div className="flex flex-col sm:flex-row gap-3 mt-4 animate-in fade-in slide-in-from-bottom-4 duration-300 ease-out" style={{ animationDelay: "100ms", animationFillMode: "backwards" }}>
           <Link
             href="/docs"
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-white text-black px-6 py-2.5 font-medium transition-transform duration-160 ease-out hover:scale-[1.02] active:scale-[0.97]"
@@ -104,12 +104,12 @@ export default function HomePageContent() {
       </section>
 
       {/* Code Example */}
-      <section className="w-full max-w-3xl">
+      <section className="w-full max-w-3xl animate-in fade-in slide-in-from-bottom-4 duration-300 ease-out" style={{ animationDelay: "150ms", animationFillMode: "backwards" }}>
         <DynamicCodeBlock lang="typescript" code={codeExample} />
       </section>
 
       {/* Footer */}
-      <footer className="flex flex-wrap justify-center gap-4 text-sm">
+      <footer className="flex flex-wrap justify-center gap-4 text-sm animate-in fade-in duration-300 ease-out" style={{ animationDelay: "200ms", animationFillMode: "backwards" }}>
         <span className="text-white/50">
           Made with ❤️{" "}
           <Link
