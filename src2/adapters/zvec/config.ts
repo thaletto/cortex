@@ -1,5 +1,5 @@
 import { ZVecLogLevel, ZVecLogType } from "@zvec/zvec"
-import { Context, Effect, Layer, Schema } from "effect"
+import { Context, Layer, Schema } from "effect"
 
 export const ZvecInitOptions = Schema.Struct({
     logType: Schema.optional(Schema.Literals([ZVecLogType.CONSOLE, ZVecLogType.FILE])),
