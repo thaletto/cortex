@@ -1,7 +1,8 @@
-import type { ZVecCollection as RawZVecCollection } from "@zvec/zvec"
+import type { ZVecCollection as RawZVecCollection, ZVecStatus } from "@zvec/zvec"
 import { Effect, Layer, Option } from "effect"
 import { VectorDB } from "../../services/vector-db.ts"
 import {
+    DimensionMismatch,
     DocumentNotFound,
     type DocumentId,
     type Pagination,
@@ -9,12 +10,29 @@ import {
     type SearchResult,
     type UpsertPayload,
     type Vector,
+    VectorDBError,
 } from "../../schema/index.ts"
 import { payloadToCollectionSchema, toCollectionSchema, toZvecDoc } from "./codec.ts"
 import { VECTOR_FIELD } from "./constants.ts"
-import { lift, statusesToEffect, statusToEffect, validateDimension } from "./effects.ts"
 import { buildExpiredFilter, buildFilter, withFilter } from "./filters.ts"
 import { ZvecSdk } from "./sdk.ts"
+
+const checkStatus = Effect.fn("zvec.checkStatus")(function* (status: ZVecStatus, message: string) {
+    if (!status.ok) {
+        return yield* new VectorDBError({
+            message: `${message}: ${status.code} ${status.message}`,
+        })
+    }
+})
+
+const checkStatuses = Effect.fn("zvec.checkStatuses")(function* (statuses: ReadonlyArray<ZVecStatus>, message: string) {
+    const failed = statuses.find((status) => !status.ok)
+    if (failed !== undefined) {
+        return yield* new VectorDBError({
+            message: `${message}: ${failed.code} ${failed.message}`,
+        })
+    }
+})
 
 const queryAll = Effect.fn("zvec.queryAll")(function* (
     collection: RawZVecCollection,
@@ -29,13 +47,17 @@ const queryAll = Effect.fn("zvec.queryAll")(function* (
         return []
     }
 
-    const docs = yield* lift(
-        () =>
+    const docs = yield* Effect.try({
+        try: () =>
             collection.querySync(
                 withFilter({ topk }, buildFilter(filter))
             ),
-        "Failed to query documents"
-    )
+        catch: (cause) =>
+            new VectorDBError({
+                message: "Failed to query documents",
+                cause,
+            }),
+    })
 
     return docs.slice(offset, offset + limit)
 })
@@ -46,10 +68,14 @@ export const ZvecVectorDBLive = Layer.effect(
         const { collection, dimension } = yield* ZvecSdk
 
         const findById = Effect.fn("zvec.findById")(function* (id: DocumentId) {
-            const result = yield* lift(
-                () => collection.fetchSync(id),
-                `Failed to fetch document ${id}`
-            )
+            const result = yield* Effect.try({
+                try: () => collection.fetchSync(id),
+                catch: (cause) =>
+                    new VectorDBError({
+                        message: `Failed to fetch document ${id}`,
+                        cause,
+                    }),
+            })
             const doc = result[id]
 
             return doc === undefined
@@ -67,48 +93,75 @@ export const ZvecVectorDBLive = Layer.effect(
         })
 
         const upsert = Effect.fn("zvec.upsert")(function* (payload: UpsertPayload) {
-            yield* validateDimension(payload.vector, dimension)
+            if (payload.vector.length !== dimension) {
+                return yield* new DimensionMismatch({
+                    expected: dimension,
+                    actual: payload.vector.length,
+                })
+            }
+
             const createdAt = new Date()
-            const status = yield* lift(
-                () => collection.upsertSync(toZvecDoc(payload, createdAt)),
-                `Failed to upsert document ${payload.id}`
-            )
-            yield* statusToEffect(status, `Failed to upsert document ${payload.id}`)
+            const status = yield* Effect.try({
+                try: () => collection.upsertSync(toZvecDoc(payload, createdAt)),
+                catch: (cause) =>
+                    new VectorDBError({
+                        message: `Failed to upsert document ${payload.id}`,
+                        cause,
+                    }),
+            })
+            yield* checkStatus(status, `Failed to upsert document ${payload.id}`)
 
             return payloadToCollectionSchema(payload, createdAt)
         })
 
         const upsertMany = Effect.fn("zvec.upsertMany")(function* (payloads: ReadonlyArray<UpsertPayload>) {
             for (const payload of payloads) {
-                yield* validateDimension(payload.vector, dimension)
+                if (payload.vector.length !== dimension) {
+                    return yield* new DimensionMismatch({
+                        expected: dimension,
+                        actual: payload.vector.length,
+                    })
+                }
             }
 
             const createdAt = new Date()
-            const statuses = yield* lift(
-                () => collection.upsertSync(payloads.map((payload) => toZvecDoc(payload, createdAt))),
-                "Failed to upsert documents"
-            )
-            yield* statusesToEffect(statuses, "Failed to upsert documents")
+            const statuses = yield* Effect.try({
+                try: () => collection.upsertSync(payloads.map((payload) => toZvecDoc(payload, createdAt))),
+                catch: (cause) =>
+                    new VectorDBError({
+                        message: "Failed to upsert documents",
+                        cause,
+                    }),
+            })
+            yield* checkStatuses(statuses, "Failed to upsert documents")
 
             return payloads.map((payload) => payloadToCollectionSchema(payload, createdAt))
         })
 
         const deleteById = Effect.fn("zvec.delete")(function* (id: DocumentId) {
             yield* getById(id)
-            const status = yield* lift(
-                () => collection.deleteSync(id),
-                `Failed to delete document ${id}`
-            )
-            yield* statusToEffect(status, `Failed to delete document ${id}`)
+            const status = yield* Effect.try({
+                try: () => collection.deleteSync(id),
+                catch: (cause) =>
+                    new VectorDBError({
+                        message: `Failed to delete document ${id}`,
+                        cause,
+                    }),
+            })
+            yield* checkStatus(status, `Failed to delete document ${id}`)
         })
 
         const deleteWhere = Effect.fn("zvec.deleteWhere")(function* (filter: QueryFilter) {
             const deleted = (yield* queryAll(collection, filter, undefined)).length
-            const status = yield* lift(
-                () => collection.deleteByFilterSync(buildFilter(filter) ?? ""),
-                "Failed to delete documents by filter"
-            )
-            yield* statusToEffect(status, "Failed to delete documents by filter")
+            const status = yield* Effect.try({
+                try: () => collection.deleteByFilterSync(buildFilter(filter) ?? ""),
+                catch: (cause) =>
+                    new VectorDBError({
+                        message: "Failed to delete documents by filter",
+                        cause,
+                    }),
+            })
+            yield* checkStatus(status, "Failed to delete documents by filter")
 
             return deleted
         })
@@ -118,16 +171,26 @@ export const ZvecVectorDBLive = Layer.effect(
             limit: number,
             filter?: QueryFilter
         ) {
-            yield* validateDimension(queryVector, dimension)
-            const docs = yield* lift(
-                () =>
+            if (queryVector.length !== dimension) {
+                return yield* new DimensionMismatch({
+                    expected: dimension,
+                    actual: queryVector.length,
+                })
+            }
+
+            const docs = yield* Effect.try({
+                try: () =>
                     collection.querySync(withFilter({
                         fieldName: VECTOR_FIELD,
                         vector: queryVector,
                         topk: limit,
                     }, buildFilter(filter))),
-                "Vector search failed"
-            )
+                catch: (cause) =>
+                    new VectorDBError({
+                        message: "Vector search failed",
+                        cause,
+                    }),
+            })
 
             return docs.map((doc): SearchResult => ({
                 document: toCollectionSchema(doc),
@@ -141,22 +204,37 @@ export const ZvecVectorDBLive = Layer.effect(
 
         const pruneExpired = Effect.fn("zvec.pruneExpired")(function* (asOf: Date) {
             const expiredFilter = buildExpiredFilter(asOf)
-            const deleted = yield* lift(
-                () => collection.querySync({ topk: collection.stats.docCount, filter: expiredFilter }).length,
-                "Failed to count expired documents before pruning"
-            )
-            const status = yield* lift(
-                () => collection.deleteByFilterSync(expiredFilter),
-                "Failed to prune expired documents"
-            )
-            yield* statusToEffect(status, "Failed to prune expired documents")
+            const deleted = yield* Effect.try({
+                try: () => collection.querySync({ topk: collection.stats.docCount, filter: expiredFilter }).length,
+                catch: (cause) =>
+                    new VectorDBError({
+                        message: "Failed to count expired documents before pruning",
+                        cause,
+                    }),
+            })
+            const status = yield* Effect.try({
+                try: () => collection.deleteByFilterSync(expiredFilter),
+                catch: (cause) =>
+                    new VectorDBError({
+                        message: "Failed to prune expired documents",
+                        cause,
+                    }),
+            })
+            yield* checkStatus(status, "Failed to prune expired documents")
 
             return deleted
         })
 
         const count = Effect.fn("zvec.count")(function* (filter?: QueryFilter) {
             if (filter === undefined) {
-                return yield* lift(() => collection.stats.docCount, "Failed to count documents")
+                return yield* Effect.try({
+                    try: () => collection.stats.docCount,
+                    catch: (cause) =>
+                        new VectorDBError({
+                            message: "Failed to count documents",
+                            cause,
+                        }),
+                })
             }
 
             return (yield* queryAll(collection, filter, undefined)).length

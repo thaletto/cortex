@@ -8,9 +8,9 @@ import {
     type ZVecInitOptions,
 } from "@zvec/zvec"
 import { Context, Effect, FileSystem, Layer, Path } from "effect"
+import { VectorDBError } from "../../schema/index.ts"
 import { VECTOR_FIELD } from "./constants.ts"
 import { ZvecSdkConfig } from "./config.ts"
-import { lift } from "./effects.ts"
 import { makeCollectionSchema } from "./schema.ts"
 
 let initialized = false
@@ -54,27 +54,39 @@ export const ZvecSdkLive = Layer.effect(
                 const exists = yield* fileSystem.exists(config.path)
 
                 if (exists) {
-                    return yield* lift(
-                        () => ZVecOpen(config.path, options),
-                        `Failed to open zvec collection at ${config.path}`
-                    )
+                    return yield* Effect.try({
+                        try: () => ZVecOpen(config.path, options),
+                        catch: (cause) =>
+                            new VectorDBError({
+                                message: `Failed to open zvec collection at ${config.path}`,
+                                cause,
+                            }),
+                    })
                 }
 
-                return yield* lift(
-                    () =>
+                return yield* Effect.try({
+                    try: () =>
                         ZVecCreateAndOpen(
                             config.path,
                             makeCollectionSchema(collectionName, dimension),
                             options
                         ),
-                    `Failed to create zvec collection at ${config.path}`
-                )
+                    catch: (cause) =>
+                        new VectorDBError({
+                            message: `Failed to create zvec collection at ${config.path}`,
+                            cause,
+                        }),
+                })
             }),
             function closeCollection(collection) {
-                return lift(
-                    () => collection.closeSync(),
-                    `Failed to close zvec collection at ${config.path}`
-                ).pipe(Effect.orDie)
+                return Effect.try({
+                    try: () => collection.closeSync(),
+                    catch: (cause) =>
+                        new VectorDBError({
+                            message: `Failed to close zvec collection at ${config.path}`,
+                            cause,
+                        }),
+                }).pipe(Effect.orDie)
             }
         )
 
