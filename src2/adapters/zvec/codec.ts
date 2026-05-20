@@ -5,8 +5,10 @@ import {
     type UpsertPayload,
 } from "../../schema/index.ts"
 import { VECTOR_FIELD } from "./constants.ts"
+import { Effect } from "effect"
 
-export function toZvecDoc(payload: UpsertPayload, createdAt: Date): ZVecDocInput {
+
+export const toZvecDoc = Effect.fn("toZvecDoc")(function* (payload: UpsertPayload, createdAt: Date) {
     return {
         id: payload.id,
         vectors: {
@@ -20,10 +22,10 @@ export function toZvecDoc(payload: UpsertPayload, createdAt: Date): ZVecDocInput
             created_at: createdAt.getTime(),
             expires_at: payload.expires_at.getTime(),
         },
-    }
-}
+    } as ZVecDocInput
+})
 
-export function toCollectionSchema(doc: ZVecDoc): CollectionSchema {
+export const toCollectionSchema = Effect.fn("toCollectionSchema")(function* (doc: ZVecDoc) {
     return new CollectionSchema({
         id: doc.id as DocumentId,
         content: String(doc.fields["content"]),
@@ -35,9 +37,9 @@ export function toCollectionSchema(doc: ZVecDoc): CollectionSchema {
         created_at: new Date(Number(doc.fields["created_at"])),
         expires_at: new Date(Number(doc.fields["expires_at"])),
     })
-}
+})
 
-export function payloadToCollectionSchema(payload: UpsertPayload, createdAt: Date): CollectionSchema {
+export const payloadToCollectionSchema = Effect.fn("payloadToCollectionSchema")(function* (payload: UpsertPayload, createdAt: Date) {
     return new CollectionSchema({
         id: payload.id,
         content: payload.content,
@@ -47,4 +49,4 @@ export function payloadToCollectionSchema(payload: UpsertPayload, createdAt: Dat
         created_at: createdAt,
         expires_at: payload.expires_at,
     })
-}
+})
