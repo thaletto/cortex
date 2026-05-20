@@ -64,11 +64,13 @@ export const ZvecSdkLive = Layer.effect(
                     })
                 }
 
+                const collectionSchema = yield* makeCollectionSchema(collectionName, dimension)
+
                 return yield* Effect.try({
                     try: () =>
                         ZVecCreateAndOpen(
                             config.path,
-                            makeCollectionSchema(collectionName, dimension),
+                            collectionSchema,
                             options
                         ),
                     catch: (cause) =>

@@ -4,26 +4,38 @@ import {
     ZVecIndexType,
     ZVecMetricType,
 } from "@zvec/zvec"
+
+import { Effect } from "effect"
+
 import { VECTOR_FIELD } from "./constants.ts"
 
-export function makeCollectionSchema(name: string, dimension: number): ZVecCollectionSchema {
+export const makeCollectionSchema = Effect.fn("zvec.makeCollectionSchema")(function* (
+    name: string,
+    dimension: number
+) {
     return new ZVecCollectionSchema({
         name,
         fields: [
             {
                 name: "content",
                 dataType: ZVecDataType.STRING,
-                indexParams: { indexType: ZVecIndexType.INVERT },
+                indexParams: {
+                    indexType: ZVecIndexType.INVERT,
+                },
             },
             {
                 name: "category",
                 dataType: ZVecDataType.STRING,
-                indexParams: { indexType: ZVecIndexType.INVERT },
+                indexParams: {
+                    indexType: ZVecIndexType.INVERT,
+                },
             },
             {
                 name: "tags",
                 dataType: ZVecDataType.ARRAY_STRING,
-                indexParams: { indexType: ZVecIndexType.INVERT },
+                indexParams: {
+                    indexType: ZVecIndexType.INVERT,
+                },
             },
             {
                 name: "metadata_json",
@@ -58,4 +70,4 @@ export function makeCollectionSchema(name: string, dimension: number): ZVecColle
             },
         ],
     })
-}
+})
