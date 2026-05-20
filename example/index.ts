@@ -1,251 +1,179 @@
 /**
- * Real-world demo: chunk a text file, store vectors, search via CLI.
- * Run: bun run example/index.ts [path-to-file]
- * Default: example/sample.txt
+ * example/index.ts
+ *
+ * Run:
+ * bun run example/index.ts
  */
 
-import { Effect, Layer, Schema as S } from "effect";
-
 import {
-	VectorStore,
-	VectorStoreLive,
-	ZVecCollectionLive,
-	ZVecCollectionConfig,
-	VectorMetadata,
-	VectorId
-} from "../src/index.ts";
+	Console,
+	Effect,
+	FileSystem,
+	Layer,
+} from "effect"
 
-import {
-	readFileSync,
-	existsSync,
-	rmSync,
-} from "node:fs";
+import { BunRuntime, BunFileSystem, BunPath } from "@effect/platform-bun"
 
-import readline from "node:readline/promises";
+import { VectorDB, DocumentId, Vector } from "@/index"
+import { VectorDBLive } from "@/adapters/zvec/index"
 
-import {
-	stdin as input,
-	stdout as output,
-} from "node:process";
-
-// Start fresh
-rmSync(".cortex", {
-	recursive: true,
-	force: true,
-});
-
-const DIM = 128;
-
-function textToVector(
+function embed(
 	text: string,
-	dim: number = DIM,
-): Float32Array {
-	const vector = new Float32Array(dim);
+	dimension = 384
+): Vector {
+	const vector = new Array<number>(dimension).fill(0)
 
-	const lower = text.toLowerCase();
-
-	for (let i = 0; i < lower.length - 2; i++) {
-		const hash =
-			lower.charCodeAt(i)! * 97 +
-			lower.charCodeAt(i + 1)! * 31 +
-			lower.charCodeAt(i + 2)!;
-
-		vector[Math.abs(hash) % dim]! += 1;
+	for (let i = 0; i < text.length; i++) {
+		vector[i % dimension]! += text.charCodeAt(i)
 	}
 
-	let magnitude = 0;
+	let magnitude = 0
 
-	for (let i = 0; i < dim; i++) {
-		magnitude += vector[i]! * vector[i]!;
+	for (const value of vector) {
+		magnitude += value * value
 	}
 
-	magnitude = Math.sqrt(magnitude);
+	magnitude = Math.sqrt(magnitude)
 
 	if (magnitude > 0) {
-		for (let i = 0; i < dim; i++) {
-			vector[i]! /= magnitude;
+		for (let i = 0; i < dimension; i++) {
+			vector[i]! /= magnitude
 		}
 	}
 
-	return vector;
+	return Vector.make(vector)
 }
 
 function chunkText(
 	text: string,
-	maxWords: number = 80,
-	overlap: number = 20,
-): Array<{
-	text: string;
-	index: number;
-}> {
-	const words = text.split(/\s+/);
+	chunkSize = 300
+): string[] {
+	const cleaned = text
+		.replace(/\s+/g, " ")
+		.trim()
 
-	const chunks: Array<{
-		text: string;
-		index: number;
-	}> = [];
+	const chunks: string[] = []
 
-	let start = 0;
-	let index = 0;
-
-	while (start < words.length) {
-		const end = Math.min(
-			start + maxWords,
-			words.length,
-		);
-
-		chunks.push({
-			text: words
-				.slice(start, end)
-				.join(" "),
-			index,
-		});
-
-		index++;
-
-		if (end >= words.length) {
-			break;
-		}
-
-		start += maxWords - overlap;
+	for (
+		let index = 0;
+		index < cleaned.length;
+		index += chunkSize
+	) {
+		chunks.push(
+			cleaned.slice(
+				index,
+				index + chunkSize
+			)
+		)
 	}
 
-	return chunks;
+	return chunks
 }
 
-const ConfigLayer = Layer.succeed(
-	ZVecCollectionConfig,
-	{
-		dimension: DIM,
-	},
-);
+const readSampleFile = Effect.fn(
+	"example.readSampleFile"
+)(function* () {
+	const fs = yield* FileSystem.FileSystem
 
-const CollectionLayer =
-	Layer.provideMerge(
-		ZVecCollectionLive,
-		ConfigLayer,
-	);
+	return yield* fs.readFileString(
+		"./example/sample.txt"
+	)
+})
 
-const MainLayer =
-	Layer.provideMerge(
-		VectorStoreLive,
-		CollectionLayer,
-	);
+const insertChunks = Effect.fn(
+	"example.insertChunks"
+)(function* (
+	chunks: ReadonlyArray<string>
+) {
+	const db = yield* VectorDB
 
-const question = (
-	rl: readline.Interface,
-	text: string,
-) =>
-	Effect.promise(() =>
-		rl.question(text),
-	);
+	for (const [index, chunk] of chunks.entries()) {
+		yield* db.upsert({
+			id: DocumentId.make(`chunk-${index}`),
+			content: chunk,
+			category: "sample",
+			tags: `["example", "text"]`,
+			metadata_json: `{
+				chunkIndex: index,
+			}`,
+			vector: embed(chunk),
+			expires_at: new Date(Date.now() + 7 * 864e5),
+		})
+	}
+
+	yield* Console.log(
+		`Inserted ${chunks.length} chunks`
+	)
+})
+
+const searchDocuments = Effect.fn(
+	"example.searchDocuments"
+)(function* (query: string) {
+	const db = yield* VectorDB
+
+	const results = yield* db.search(
+		embed(query),
+		3
+	)
+
+	yield* Console.log(
+		`\nQuery: ${query}\n`
+	)
+
+	for (const result of results) {
+		yield* Console.log(
+			`Score: ${result.score.toFixed(4)}`
+		)
+
+		yield* Console.log(
+			result.document.content
+		)
+
+		yield* Console.log(
+			"\n-------------------\n"
+		)
+	}
+})
 
 const program = Effect.gen(function* () {
-	const store =
-		yield* VectorStore;
+	yield* Console.log(
+		"\nReading sample.txt...\n"
+	)
 
-	const filePath =
-		process.argv[2] ??
-		"./example/sample.txt";
+	const content = yield* readSampleFile()
 
-	if (!existsSync(filePath)) {
-		console.log(
-			`File not found: ${filePath}`,
-		);
+	const chunks = chunkText(content)
 
-		return;
-	}
+	yield* Console.log(
+		`Created ${chunks.length} chunks\n`
+	)
 
-	const text = readFileSync(
-		filePath,
-		"utf-8",
-	);
+	yield* insertChunks(chunks)
 
-	const chunks = chunkText(text);
+	yield* searchDocuments(
+		"What does the document talk about?"
+	)
 
-	console.log(
-		`\nLoaded ${chunks.length} chunks\n`,
-	);
+	const db = yield* VectorDB
 
-	for (const chunk of chunks) {
-		const id = S.decodeSync(
-			VectorId,
-		)(`chunk-${chunk.index}`);
+	const total = yield* db.count()
 
-		const metadata =
-			new VectorMetadata({
-				content: chunk.text,
-				category: "knowledge",
-				tags: [],
-				metadata: {
-					source: filePath,
-				},
-				expiresAt: null,
-			});
+	yield* Console.log(
+		`\nTotal documents: ${total}\n`
+	)
+})
 
-		yield* store.store(
-			id,
-			textToVector(chunk.text),
-			metadata,
-		);
-	}
+const PlatformLive = Layer.merge(
+	BunFileSystem.layer,
+	BunPath.layer
+)
 
-	console.log("Ready.\n");
+const MainLive = VectorDBLive.pipe(
+	Layer.provideMerge(PlatformLive)
+)
 
-	const rl = readline.createInterface({
-		input,
-		output,
-	});
-
-	while (true) {
-		const query = yield* question(
-			rl,
-			"Search > ",
-		);
-
-		const inputText =
-			query.trim();
-
-		if (
-			inputText === "quit" ||
-			inputText === "exit"
-		) {
-			break;
-		}
-
-		const results =
-			yield* store.search(
-				textToVector(inputText),
-				{
-					limit: 3,
-				},
-			);
-
-		if (results.length === 0) {
-			console.log(
-				"\nNo matches.\n",
-			);
-
-			continue;
-		}
-
-		console.log("");
-
-		for (const result of results) {
-			console.log(
-				`[${result.score.toFixed(3)}] ${result.content.substring(0, 120)}`,
-			);
-		}
-
-		console.log("");
-	}
-
-	rl.close();
-});
-
-Effect.runPromise(
-	Effect.provide(
-		program,
-		MainLayer,
-	),
-);
+BunRuntime.runMain(
+	program.pipe(
+		Effect.provide(MainLive)
+	)
+)
