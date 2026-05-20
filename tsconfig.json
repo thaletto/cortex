@@ -1,39 +1,37 @@
 {
   "compilerOptions": {
-    // Environment setup & latest features
     "lib": ["ESNext"],
     "target": "ES2022",
-    "module": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+
     "moduleDetection": "force",
     "jsx": "react-jsx",
     "allowJs": true,
+    
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"]
     },
 
-    // Bundler mode
-    "moduleResolution": "NodeNext",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "rewriteRelativeImportExtensions": true,
     "noEmit": true,
-    "incremental": true,
-    "composite": true,
 
-    // Best practices
+    "incremental": true,
+
     "strict": true,
     "skipLibCheck": true,
+
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "exactOptionalPropertyTypes": true,
 
-    // Some stricter flags (disabled by default)
     "noUnusedLocals": true,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false,
 
-    // Effect Language Service
     "plugins": [
       {
         "name": "@effect/language-service"
