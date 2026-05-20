@@ -17,7 +17,7 @@ export const ZvecInitOptions = Schema.Struct({
     queryThreads: Schema.optional(Schema.Number),
     optimizeThreads: Schema.optional(Schema.Number),
 })
-export type ZvecInitOptions = typeof ZvecInitOptions.Type
+export type ZvecInitOptions = Schema.Schema.Type<typeof ZvecInitOptions>
 
 export const ZvecSdkConfigSchema = Schema.Struct({
     path: Schema.String,
@@ -34,7 +34,7 @@ export const ZvecSdkConfigSchema = Schema.Struct({
     enableMMAP: Schema.optional(Schema.Boolean),
     initialize: Schema.optional(ZvecInitOptions),
 })
-export type ZvecSdkConfigShape = typeof ZvecSdkConfigSchema.Type
+export type ZvecSdkConfigShape = Schema.Schema.Type<typeof ZvecSdkConfigSchema>
 
 export const decodeZvecSdkConfig = Schema.decodeUnknownEffect(ZvecSdkConfigSchema)
 

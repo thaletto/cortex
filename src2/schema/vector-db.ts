@@ -11,26 +11,26 @@ export const UpsertPayload = Schema.Struct({
     vector: Vector,
     expires_at: Schema.DateFromString
 })
-export type UpsertPayload = typeof UpsertPayload.Type
+export type UpsertPayload = Schema.Schema.Type<typeof UpsertPayload>
 
 export const SearchResult = Schema.Struct({
     document: CollectionSchema,
     score: Schema.Number,
 })
-export type SearchResult = typeof SearchResult.Type
+export type SearchResult = Schema.Schema.Type<typeof SearchResult>
 
 export const QueryFilter = Schema.Struct({
     category: Schema.optional(Schema.String),
     tags: Schema.optional(Schema.Array(Schema.String)),
     activeAt: Schema.optional(Schema.DateFromString)
 })
-export type QueryFilter = typeof QueryFilter.Type
+export type QueryFilter = Schema.Schema.Type<typeof QueryFilter>
 
 export const Pagination = Schema.Struct({
     limit: Schema.Number,
     offset: Schema.Number
 })
-export type Pagination = typeof Pagination.Type
+export type Pagination = Schema.Schema.Type<typeof Pagination>
 
 export class VectorDBError extends Schema.TaggedErrorClass<VectorDBError>()("VectorDBError", {
     message: Schema.String,
