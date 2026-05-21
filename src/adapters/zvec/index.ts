@@ -1,1 +1,1 @@
-export {VectorDBLive} from './layer.ts'
+export { VectorDBLive } from './layer.ts'
