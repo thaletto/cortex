@@ -1,0 +1,99 @@
+---
+title: ZVec
+description: Storage backends and how to use them
+---
+
+Cortex uses ZVec as its default persistent storage engine. It provides an in-process vector database with WAL persistence.
+
+## Usage Patterns
+
+You can use the ZVec adapter in two ways: using the provided defaults or with a custom configuration.
+
+### 1. Default Setup (Zero Config)
+
+The `DefaultVectorDBLive` layer comes pre-configured with sensible defaults:
+- **Path**: `.cortex/zvec`
+- **Dimension**: `384`
+
+```typescript
+import { DefaultVectorDBLive } from "@cortex/zvec";
+
+const CortexLive = DefaultVectorDBLive;
+```
+
+### 2. Custom Configuration
+
+If you need to change the path, dimensionality, or other settings, use `VectorDBLive` and provide a `ZvecSdkConfig`.
+
+```typescript
+import { Layer } from "effect";
+import { VectorDBLive, ZvecSdkConfig } from "@cortex/zvec";
+
+const CortexLive = VectorDBLive.pipe(
+  Layer.provide(Layer.succeed(ZvecSdkConfig, { 
+    path: "./data/my-vectors",
+    dimension: 1536,
+    enableMMAP: true
+  }))
+);
+```
+
+> [!NOTE]
+> Even if you import `ZvecSdkConfig`, providing it again to `VectorDBLive` will correctly override the internal requirements. You do not need to create a new layer from scratch.
+
+## Providing the Layer
+
+Once you have defined your `CortexLive` layer (using either of the methods above), you need to provide it to your program so it can execute.
+
+### Using `Effect.provide`
+
+The most common way to run a program with Cortex is to provide your layer at the entry point of your application.
+
+```typescript
+import { Effect } from "effect";
+import { program } from "./my-logic"; // Your VectorDB logic
+// import { CortexLive } from "./my-infrastructure";
+
+// 1. Combine your logic with your defined CortexLive layer
+const runnable = program.pipe(
+  Effect.provide(CortexLive)
+);
+
+// 2. Execute
+Effect.runPromise(runnable);
+```
+
+### Composing with other Layers
+
+If your application has other services (like logging or a file system), you can merge them into a single requirements layer.
+
+```typescript
+import { Layer } from "effect";
+import { MyLoggingLive } from "./logging";
+
+// Compose CortexLive with other app services
+const AppLive = Layer.mergeAll(
+  CortexLive,
+  MyLoggingLive
+);
+
+// Run the whole app with all dependencies
+Effect.runPromise(main.pipe(Effect.provide(AppLive)));
+```
+
+## Configuration Options (`ZvecSdkConfig`)
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `string` | `.cortex/zvec` | Path to storage directory |
+| `dimension` | `number` | `384` | Vector dimensionality |
+| `collectionName`| `string` | `cortex` | ZVec collection name |
+| `readOnly` | `boolean` | `false` | Open in read-only mode |
+| `enableMMAP` | `boolean` | `true` | Enable memory-mapped files |
+
+## Technical Details
+
+- **Storage**: Data is stored in the directory specified by `path`.
+- **Indexing**: Uses HNSW for vector search and Inverted Index for metadata fields.
+- **Persistence**: Full WAL (Write-Ahead Logging) support via ZVec.
+- **Threading**: Configurable query and optimization threads via `initialize` options.

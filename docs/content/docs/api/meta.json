@@ -1,0 +1,6 @@
+{
+  "title": "API Reference",
+  "collapsible": true,
+  "defaultOpen": true,
+  "pages": ["service", "schema"]
+}

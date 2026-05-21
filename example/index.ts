@@ -1,251 +1,58 @@
+import { Effect, Console } from "effect"
+import { VectorDB, DocumentId, Vector } from "@cortex/cortex"
+import { DefaultVectorDBLive } from "@cortex/zvec"
+import { NodeFileSystem, NodePath } from "@effect/platform-node"
+
 /**
- * Real-world demo: chunk a text file, store vectors, search via CLI.
- * Run: bun run example/index.ts [path-to-file]
- * Default: example/sample.txt
+ * A simple "AI Memory" example.
+ * We teach Cortex a few things about a user and then retrieve them Semantically.
  */
 
-import { Effect, Layer, Schema as S } from "effect";
-
-import {
-	VectorStore,
-	VectorStoreLive,
-	ZVecCollectionLive,
-	ZVecCollectionConfig,
-	VectorMetadata,
-	VectorId
-} from "../src/index.ts";
-
-import {
-	readFileSync,
-	existsSync,
-	rmSync,
-} from "node:fs";
-
-import readline from "node:readline/promises";
-
-import {
-	stdin as input,
-	stdout as output,
-} from "node:process";
-
-// Start fresh
-rmSync(".cortex", {
-	recursive: true,
-	force: true,
-});
-
-const DIM = 128;
-
-function textToVector(
-	text: string,
-	dim: number = DIM,
-): Float32Array {
-	const vector = new Float32Array(dim);
-
-	const lower = text.toLowerCase();
-
-	for (let i = 0; i < lower.length - 2; i++) {
-		const hash =
-			lower.charCodeAt(i)! * 97 +
-			lower.charCodeAt(i + 1)! * 31 +
-			lower.charCodeAt(i + 2)!;
-
-		vector[Math.abs(hash) % dim]! += 1;
-	}
-
-	let magnitude = 0;
-
-	for (let i = 0; i < dim; i++) {
-		magnitude += vector[i]! * vector[i]!;
-	}
-
-	magnitude = Math.sqrt(magnitude);
-
-	if (magnitude > 0) {
-		for (let i = 0; i < dim; i++) {
-			vector[i]! /= magnitude;
-		}
-	}
-
-	return vector;
+// Simple deterministic embedding mock for demonstration
+const embed = (text: string) => {
+    const v = new Array<number>(384).fill(0)
+    for (let i = 0; i < text.length; i++) {
+        v[i % 384] += text.charCodeAt(i)
+    }
+    const mag = Math.sqrt(v.reduce((a, b) => a + b * b, 0))
+    return Vector.make(v.map(x => x / (mag || 1)))
 }
-
-function chunkText(
-	text: string,
-	maxWords: number = 80,
-	overlap: number = 20,
-): Array<{
-	text: string;
-	index: number;
-}> {
-	const words = text.split(/\s+/);
-
-	const chunks: Array<{
-		text: string;
-		index: number;
-	}> = [];
-
-	let start = 0;
-	let index = 0;
-
-	while (start < words.length) {
-		const end = Math.min(
-			start + maxWords,
-			words.length,
-		);
-
-		chunks.push({
-			text: words
-				.slice(start, end)
-				.join(" "),
-			index,
-		});
-
-		index++;
-
-		if (end >= words.length) {
-			break;
-		}
-
-		start += maxWords - overlap;
-	}
-
-	return chunks;
-}
-
-const ConfigLayer = Layer.succeed(
-	ZVecCollectionConfig,
-	{
-		dimension: DIM,
-	},
-);
-
-const CollectionLayer =
-	Layer.provideMerge(
-		ZVecCollectionLive,
-		ConfigLayer,
-	);
-
-const MainLayer =
-	Layer.provideMerge(
-		VectorStoreLive,
-		CollectionLayer,
-	);
-
-const question = (
-	rl: readline.Interface,
-	text: string,
-) =>
-	Effect.promise(() =>
-		rl.question(text),
-	);
 
 const program = Effect.gen(function* () {
-	const store =
-		yield* VectorStore;
+    const db = yield* VectorDB
 
-	const filePath =
-		process.argv[2] ??
-		"./example/sample.txt";
+    yield* Console.log("🧠 Cortex: Teaching the database some facts...")
 
-	if (!existsSync(filePath)) {
-		console.log(
-			`File not found: ${filePath}`,
-		);
+    const facts = [
+        { id: "fact-1", text: "The user prefers dark mode in all applications.", cat: "ui" },
+        { id: "fact-2", text: "The user is a senior engineer who loves Effect and TypeScript.", cat: "bio" },
+        { id: "fact-3", text: "The user is allergic to peanuts.", cat: "health" }
+    ]
 
-		return;
-	}
+    yield* db.upsertMany(facts.map(f => ({
+        id: DocumentId.make(f.id),
+        content: f.text,
+        category: f.cat,
+        tags: f.cat,
+        metadata_json: "{}",
+        vector: embed(f.text),
+        expires_at: new Date("2030-01-01")
+    })))
 
-	const text = readFileSync(
-		filePath,
-		"utf-8",
-	);
+    yield* Console.log("🔍 Cortex: Searching for 'coding preferences'...")
 
-	const chunks = chunkText(text);
+    const results = yield* db.search(embed("What does the user like to code with?"), 2)
 
-	console.log(
-		`\nLoaded ${chunks.length} chunks\n`,
-	);
+    for (const { document, score } of results) {
+        yield* Console.log(`\n[Score: ${score.toFixed(4)}]`)
+        yield* Console.log(`> ${document.content}`)
+    }
+})
 
-	for (const chunk of chunks) {
-		const id = S.decodeSync(
-			VectorId,
-		)(`chunk-${chunk.index}`);
+// Provide requirements: VectorDB (ZVec) + FileSystem (Node)
+const MainLayer = DefaultVectorDBLive.pipe(
+    Effect.provide(NodeFileSystem.layer),
+    Effect.provide(NodePath.layer)
+)
 
-		const metadata =
-			new VectorMetadata({
-				content: chunk.text,
-				category: "knowledge",
-				tags: [],
-				metadata: {
-					source: filePath,
-				},
-				expiresAt: null,
-			});
-
-		yield* store.store(
-			id,
-			textToVector(chunk.text),
-			metadata,
-		);
-	}
-
-	console.log("Ready.\n");
-
-	const rl = readline.createInterface({
-		input,
-		output,
-	});
-
-	while (true) {
-		const query = yield* question(
-			rl,
-			"Search > ",
-		);
-
-		const inputText =
-			query.trim();
-
-		if (
-			inputText === "quit" ||
-			inputText === "exit"
-		) {
-			break;
-		}
-
-		const results =
-			yield* store.search(
-				textToVector(inputText),
-				{
-					limit: 3,
-				},
-			);
-
-		if (results.length === 0) {
-			console.log(
-				"\nNo matches.\n",
-			);
-
-			continue;
-		}
-
-		console.log("");
-
-		for (const result of results) {
-			console.log(
-				`[${result.score.toFixed(3)}] ${result.content.substring(0, 120)}`,
-			);
-		}
-
-		console.log("");
-	}
-
-	rl.close();
-});
-
-Effect.runPromise(
-	Effect.provide(
-		program,
-		MainLayer,
-	),
-);
+Effect.runPromise(program.pipe(Effect.provide(MainLayer)))

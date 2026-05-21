@@ -25,7 +25,7 @@ export function baseOptions(): BaseLayoutProps {
           <Image src="/cortex-logo.svg" alt="Logo" width={108} height={108} />
         </>
       ),
-      transparentMode: 'top'
+      transparentMode: 'top',
     },
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
     links: [
@@ -37,5 +37,8 @@ export function baseOptions(): BaseLayoutProps {
         url: `https://www.npmjs.com/package/@${gitConfig.user}/${gitConfig.repo}`,
       },
     ],
+    themeSwitch: {
+      enabled: false,
+    }
   };
 }

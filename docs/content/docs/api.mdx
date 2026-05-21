@@ -3,49 +3,58 @@ title: API Reference
 description: Complete API documentation for Cortex
 ---
 
-## Exports
+## VectorDB Service
 
-Cortex exports the following from the main entry point:
+The primary service for interacting with vector collections.
 
-### Type Exports
+### Methods
 
-- `VectorStore` - The service tag (Effect service identifier)
-- `SearchOptions` - Options for search queries
-- `SearchResult` - Individual search result with score and metadata
-- `StoredEntry` - A stored vector entry with its metadata
-- `VectorMetadata` - Schema for metadata associated with a vector
-- `VectorId` - Branded type for vector identifiers
+| Method | Params | Returns |
+| ----| -- | -- |
+| `upsert` | `UpsertPayload` | `Effect< CollectionSchema, ... >` |
+| `upsertMany` | `UpsertPayload[]` | `Effect< CollectionSchema[], ... >` |
+| `search` | `Vector, limit, QueryFilter?` | `Effect< SearchResult[], ... >` |
+| `getById` | `DocumentId` | `Effect< CollectionSchema, ... >` |
+| `findById` | `DocumentId` | `Effect< Option< CollectionSchema >, ... >` |
+| `delete` | `DocumentId` | `Effect< void, ... >` |
+| `list` | `QueryFilter?, Pagination?` | `Effect< CollectionSchema[], ... >` |
+| `count` | `QueryFilter?` | `Effect< number, ... >` |
+| `pruneExpired`| `Date` | `Effect< number, ... >` |
 
-### Error Exports
+## Types
 
-- `VectorStoreError` - Base error type
-- `VectorNotFoundError` - Thrown when a requested entry doesn't exist
-- `VectorDecodeError` - Thrown when stored data is corrupted
-
-### Adapter Exports
-
-- `VectorStoreLive` - Layer for the live VectorStore implementation
-- `ZVecCollectionLive` - Layer for ZVec-backed storage
-- `ZVecCollectionConfig` - Configuration (dimension, path)
-- `InMemoryVectorStoreLive` - Layer for in-memory storage (testing)
-
-## VectorStore
-
+### `UpsertPayload`
 ```typescript
-interface VectorStore {
-  store(id: VectorId, vector: Float32Array, metadata: VectorMetadata): Effect<void, VectorStoreErrors>;
-  search(queryVector: Float32Array, options: SearchOptions): Effect<SearchResult[], VectorStoreErrors>;
-  getEntry(id: VectorId): Effect<StoredEntry, VectorStoreErrors>;
-  deleteEntry(id: VectorId): Effect<void, VectorStoreErrors>;
-  size: Effect<number, VectorStoreErrors>;
+{
+  id: DocumentId
+  content: string
+  category: string
+  tags: string          // Note: Single string in payload, becomes string[] in DB
+  metadata_json: string
+  vector: Vector
+  expires_at: Date
 }
 ```
 
-## Layer Composition
-
+### `SearchResult`
 ```typescript
-const layer = Layer.provideMerge(VectorStoreLive, Layer.provideMerge(
-  ZVecCollectionLive,
-  Layer.succeed(ZVecCollectionConfig, { dimension: 128 }),
-));
+{
+  document: CollectionSchema
+  score: number         // 0 to 1 (higher is more similar)
+}
 ```
+
+### `QueryFilter`
+```typescript
+{
+  category?: string
+  tags?: string[]
+  activeAt?: Date
+}
+```
+
+## Errors
+
+- `VectorDBError`: `{ message: string, cause?: unknown }`
+- `DocumentNotFound`: `{ id: DocumentId }`
+- `DimensionMismatch`: `{ expected: number, actual: number }`

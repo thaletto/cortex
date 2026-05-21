@@ -17,8 +17,8 @@ To update later: `git -C ~/.local/share/effect-solutions/effect pull --depth 1`
 
 ## Rules
 
-- Prefer named `function` over named `() => {}` function. Use arrow function in inline otherwise use `function` keyword, this makes it easy
-- Use `Effect.gen` instead of piping long operations
+- Use `Effect.gen` instead of piping long operations and write `Effect.fn` over TypeScript functions
+- Use Schema from Effect over TypeScript interface or types
 - Never type annotate an Effect for example `sample: Effect.Effect<number, string, never>`
 - Always create Service and Layers while creating a module, check documentation by running `bunx effect-solutions services-and-layers`
 - If unsure about using Effect check the local repository, for quick information to core concepts run `bunx effect-solutions list`
