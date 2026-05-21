@@ -36,5 +36,8 @@ export function baseOptions(): BaseLayoutProps {
         url: `https://www.npmjs.com/package/@${gitConfig.user}/${gitConfig.repo}`,
       },
     ],
+    themeSwitch: {
+      enabled: false,
+    }
   };
 }
