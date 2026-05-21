@@ -1,179 +1,89 @@
-/**
- * example/index.ts
- *
- * Run:
- * bun run example/index.ts
- */
-
-import {
-	Console,
-	Effect,
-	FileSystem,
-	Layer,
-} from "effect"
-
+/** @file Example: bulk-upsert + search-quality evaluation against a biomedical claim dataset. */
+import { Console, Effect, FileSystem, Layer } from "effect"
 import { BunRuntime, BunFileSystem, BunPath } from "@effect/platform-bun"
 
 import { VectorDB, DocumentId, Vector } from "@/index"
 import { VectorDBLive } from "@/adapters/zvec/index"
 
-function embed(
-	text: string,
-	dimension = 384
-): Vector {
-	const vector = new Array<number>(dimension).fill(0)
+const in30Days = () => new Date(Date.now() + 30 * 864e5)
 
-	for (let i = 0; i < text.length; i++) {
-		vector[i % dimension]! += text.charCodeAt(i)
-	}
-
-	let magnitude = 0
-
-	for (const value of vector) {
-		magnitude += value * value
-	}
-
-	magnitude = Math.sqrt(magnitude)
-
-	if (magnitude > 0) {
-		for (let i = 0; i < dimension; i++) {
-			vector[i]! /= magnitude
-		}
-	}
-
-	return Vector.make(vector)
+/** Deterministic char-code embedding. Projects text onto a unit vector of `dim` dimensions. */
+function embed(text: string, dim = 384): Vector {
+  const v = new Array<number>(dim).fill(0)
+  for (let i = 0; i < text.length; i++) v[i % dim]! += text.charCodeAt(i)
+  const mag = Math.sqrt(v.reduce((a, b) => a + b * b, 0))
+  if (mag > 0) for (let i = 0; i < dim; i++) v[i]! /= mag
+  return Vector.make(v)
 }
 
-function chunkText(
-	text: string,
-	chunkSize = 300
-): string[] {
-	const cleaned = text
-		.replace(/\s+/g, " ")
-		.trim()
-
-	const chunks: string[] = []
-
-	for (
-		let index = 0;
-		index < cleaned.length;
-		index += chunkSize
-	) {
-		chunks.push(
-			cleaned.slice(
-				index,
-				index + chunkSize
-			)
-		)
-	}
-
-	return chunks
-}
-
-const readSampleFile = Effect.fn(
-	"example.readSampleFile"
-)(function* () {
-	const fs = yield* FileSystem.FileSystem
-
-	return yield* fs.readFileString(
-		"./example/sample.txt"
-	)
-})
-
-const insertChunks = Effect.fn(
-	"example.insertChunks"
-)(function* (
-	chunks: ReadonlyArray<string>
-) {
-	const db = yield* VectorDB
-
-	for (const [index, chunk] of chunks.entries()) {
-		yield* db.upsert({
-			id: DocumentId.make(`chunk-${index}`),
-			content: chunk,
-			category: "sample",
-			tags: `["example", "text"]`,
-			metadata_json: `{
-				chunkIndex: index,
-			}`,
-			vector: embed(chunk),
-			expires_at: new Date(Date.now() + 7 * 864e5),
-		})
-	}
-
-	yield* Console.log(
-		`Inserted ${chunks.length} chunks`
-	)
-})
-
-const searchDocuments = Effect.fn(
-	"example.searchDocuments"
-)(function* (query: string) {
-	const db = yield* VectorDB
-
-	const results = yield* db.search(
-		embed(query),
-		3
-	)
-
-	yield* Console.log(
-		`\nQuery: ${query}\n`
-	)
-
-	for (const result of results) {
-		yield* Console.log(
-			`Score: ${result.score.toFixed(4)}`
-		)
-
-		yield* Console.log(
-			result.document.content
-		)
-
-		yield* Console.log(
-			"\n-------------------\n"
-		)
-	}
-})
-
+/**
+ * Loads biomedical claims from queries.jsonl, upserts them into the vector DB,
+ * then evaluates search quality using shared PubMed IDs as the relevance signal.
+ */
 const program = Effect.gen(function* () {
-	yield* Console.log(
-		"\nReading sample.txt...\n"
-	)
+  const fs = yield* FileSystem.FileSystem
+  const db = yield* VectorDB
 
-	const content = yield* readSampleFile()
+  const raw = yield* fs.readFileString("./example/queries.jsonl")
+  const entries: Array<{ _id: string; text: string; metadata: Record<string, unknown> }> = raw.trim().split("\n").map(l => JSON.parse(l))
 
-	const chunks = chunkText(content)
+  const pmidToDocs = new Map<string, Set<string>>()
+  for (const e of entries) {
+    for (const pmid of Object.keys(e.metadata)) {
+      if (!pmidToDocs.has(pmid)) pmidToDocs.set(pmid, new Set())
+      pmidToDocs.get(pmid)!.add(e._id)
+    }
+  }
 
-	yield* Console.log(
-		`Created ${chunks.length} chunks\n`
-	)
+  const docs = entries.map(e => ({
+    id: DocumentId.make(e._id),
+    content: e.text,
+    category: Object.keys(e.metadata).length > 0 ? "annotated" : "plain",
+    tags: JSON.stringify(Object.keys(e.metadata)),
+    metadata_json: JSON.stringify(e.metadata),
+    vector: embed(e.text),
+    expires_at: in30Days(),
+  }))
 
-	yield* insertChunks(chunks)
+  for (let i = 0; i < docs.length; i += 500) {
+    yield* db.upsertMany(docs.slice(i, i + 500))
+  }
 
-	yield* searchDocuments(
-		"What does the document talk about?"
-	)
+  let tp = 0, fp = 0, fn = 0, queries = 0
+  for (const e of entries) {
+    const pmids = Object.keys(e.metadata).filter(p => (pmidToDocs.get(p)?.size ?? 0) > 1)
+    if (pmids.length === 0) continue
 
-	const db = yield* VectorDB
+    const expected = new Set<string>()
+    for (const pmid of pmids) {
+      for (const id of pmidToDocs.get(pmid)!) {
+        if (id !== e._id) expected.add(id)
+      }
+    }
+    if (expected.size === 0) continue
 
-	const total = yield* db.count()
+    queries++
+    const results = yield* db.search(embed(e.text), 10)
+    const returned = new Set(results.map(r => r.document.id).filter(id => id !== e._id))
 
-	yield* Console.log(
-		`\nTotal documents: ${total}\n`
-	)
+    tp += [...returned].filter(id => expected.has(id)).length
+    fp += [...returned].filter(id => !expected.has(id)).length
+    fn += [...expected].filter(id => !returned.has(DocumentId.make(id))).length
+  }
+
+  const precision = tp / (tp + fp) || 0
+  const recall = tp / (tp + fn) || 0
+  const f1 = 2 * precision * recall / (precision + recall) || 0
+
+  yield* Console.log(`\nDimension: 384  Queries: ${queries}  Docs: ${entries.length}`)
+  yield* Console.log(`TP: ${tp}  FP: ${fp}  FN: ${fn}`)
+  yield* Console.log(`Precision@10: ${(precision * 100).toFixed(1)}%`)
+  yield* Console.log(`Recall@10:    ${(recall * 100).toFixed(1)}%`)
+  yield* Console.log(`F1@10:        ${(f1 * 100).toFixed(1)}%`)
 })
-
-const PlatformLive = Layer.merge(
-	BunFileSystem.layer,
-	BunPath.layer
-)
-
-const MainLive = VectorDBLive.pipe(
-	Layer.provideMerge(PlatformLive)
-)
 
 BunRuntime.runMain(
-	program.pipe(
-		Effect.provide(MainLive)
-	)
+  Effect.provide(program, VectorDBLive.pipe(
+    Layer.provideMerge(Layer.merge(BunFileSystem.layer, BunPath.layer))
+  ))
 )
