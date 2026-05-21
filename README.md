@@ -1,151 +1,78 @@
-# [@thaletto/cortex](https://cortex-vector.vercel.app/)
+# [Cortex](https://cortex-vector.vercel.app/)
 
-Vector storage for AI/LLM applications, built with [Effect](https://effect.website) and [ZVec](https://github.com/zvec/zvec). Type-safe, pluggable, and designed for explicit memory management.
-
-> **⚠️ Beta** — Effect v4 beta. API may change.
+The ORM for vector databases, built with [Effect](https://effect.website) and [ZVec](https://github.com/zvec/zvec). Type-safe, pluggable, and designed for explicit memory management.
 
 ## Install
 
 ```bash
-bun add @thaletto/cortex
+bun add @cortex/cortex @cortex/zvec
 ```
 
 ## Quick Start
 
 ```typescript
-import { Effect, Layer, Schema as S } from "effect";
-import {
-  VectorStore, VectorStoreLive,
-  ZVecCollectionLive, ZVecCollectionConfig,
-  VectorMetadata, VectorId,
-} from "@thaletto/cortex";
-
-const layer = Layer.provideMerge(VectorStoreLive, Layer.provideMerge(
-  ZVecCollectionLive,
-  Layer.succeed(ZVecCollectionConfig, { dimension: 128 }),
-));
+import { Effect } from "effect";
+import { VectorDB, DocumentId, Vector } from "@cortex/cortex";
 
 const program = Effect.gen(function* () {
-  const store = yield* VectorStore;
+  const db = yield* VectorDB;
 
-  const id = S.decodeSync(VectorId)("doc-1");
-  yield* store.store(id, new Float32Array(128), new VectorMetadata({
+  const id = DocumentId.make("user-1-preference");
+  
+  yield* db.upsert({
+    id,
     content: "User prefers TypeScript over JavaScript",
     category: "preferences",
-    tags: ["lang"],
-    metadata: {},
-    expiresAt: null,
-  }));
-
-  const results = yield* store.search(new Float32Array(128), {
-    limit: 5,
-    category: "preferences",
+    tags: "typescript",
+    metadata_json: JSON.stringify({ source: "onboarding" }),
+    vector: Vector.make(new Array(384).fill(0)),
+    expires_at: new Date("2026-12-31"),
   });
 });
-
-Effect.runPromise(program.pipe(Effect.provide(layer)));
 ```
 
 ## API
 
-### VectorStore
+### VectorDB
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| `store` | `(id, vector, metadata) => Effect<void, VectorStoreErrors>` | Upsert a vector + metadata |
-| `search` | `(queryVector, options) => Effect<SearchResult[], VectorStoreErrors>` | Nearest-neighbour search with filters |
-| `getEntry` | `(id) => Effect<StoredEntry, VectorStoreErrors>` | Fetch by ID (fails with `VectorNotFoundError`) |
-| `deleteEntry` | `(id) => Effect<void, VectorStoreErrors>` | Remove entry (no-op if missing) |
-| `size` | `Effect<number, VectorStoreErrors>` | Total stored vectors |
-
-### SearchOptions
-
-| Field | Type | Default |
-|-------|------|---------|
-| `limit` | `number` (1–1000) | `10` |
-| `category` | `string` | — |
-| `tags` | `string[]` | — |
-
-Expired entries (by `expiresAt`) are always excluded from search results.
-
-### Error Types
-
-- `VectorStoreError` - storage operation failed
-- `VectorNotFoundError` - entry not found (by tag: `"_tag": "VectorNotFoundError"`)
-- `VectorDecodeError` - data corruption on read
+| `upsert` | `(payload) => Effect<CollectionSchema, VectorDBError>` | Upsert a vector + metadata |
+| `search` | `(vector, limit, filter?) => Effect<SearchResult[], VectorDBError>` | Nearest-neighbour search |
+| `findById` | `(id) => Effect<Option<CollectionSchema>, VectorDBError>` | Fetch by ID |
+| `delete` | `(id) => Effect<void, VectorDBError>` | Remove entry |
+| `count` | `(filter?) => Effect<number, VectorDBError>` | Count records |
 
 ## Adapters
 
 ### ZVec (default)
 
-Persistent, in-process vector database with WAL persistence. Configured via `ZVecCollectionConfig`:
+Persistent, in-process vector database with WAL persistence. Configured via `ZvecSdkConfig`:
 
 ```typescript
-const layer = Layer.provideMerge(VectorStoreLive, Layer.provideMerge(
-  ZVecCollectionLive,
-  Layer.succeed(ZVecCollectionConfig, { dimension: 128 }),
-));
+import { ZvecVectorDBLive, ZvecSdkLive, ZvecSdkConfig } from "@cortex/zvec";
+
+const layer = Layer.provide(
+  ZvecVectorDBLive,
+  Layer.provide(ZvecSdkLive, Layer.succeed(ZvecSdkConfig, { path: ".cortex", dimension: 128 }))
+);
 ```
 
 Data is stored in `.cortex/`.
-
-### InMemory (testing)
-
-```typescript
-import { InMemoryVectorStoreLive } from "@thaletto/cortex";
-
-const program = Effect.gen(function* () {
-  const store = yield* VectorStore;
-  // ...
-}).pipe(Effect.provide(InMemoryVectorStoreLive));
-```
-
-Fresh state per `Effect.provide` call — no cleanup needed. Great for tests.
 
 ## Demo
 
 ```bash
 bun run example
-# or with a custom file:
-bun run example/index.ts path/to/document.txt
-```
-
-Chunks a text file, indexes vectors, and starts an interactive search prompt:
-
-```
-  File: ./example/sample.txt
-  Chunks: 8
-  Storing vectors...
-
-  Stored 8 chunks. Ready.
-
-Search >
-  [0.468] TypeScript adds static type checking to JavaScript...
-  [0.410] designed as a drop-in replacement for Node.js...
-  [0.369] computing, Pandas for data manipulation...
-
-Search > quit
 ```
 
 ## Development
 
 ```bash
 bun install
-bun test          # 31 tests (17 in-memory + 14 ZVec)
-bun run example   # interactive CLI demo
+bun test
+bun run example
 ```
-
-## Status
-
-| Feature | Status |
-|---------|--------|
-| `VectorStore` interface | Done |
-| ZVec adapter | Done |
-| InMemory adapter | Done |
-| `MemoryService` (high-level API) | Planned |
-| `ContextManager` (validation, TTL) | Planned |
-| `EmbeddingService` integration | Planned |
-| Batch operations | Planned |
 
 ## License
 
