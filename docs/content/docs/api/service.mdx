@@ -1,0 +1,83 @@
+---
+title: 'Services'
+description: 'Core Effect services provided by Cortex for vector storage, semantic retrieval, and document lifecycle management.'
+---
+
+## VectorDB
+
+The `VectorDB` service is the primary abstraction for interacting with vector collections. It provides a type-safe, Effect-native interface for CRUD operations and semantic search.
+
+### Methods
+
+- #### `upsert`
+  Inserts or updates a single document.
+  | Parameter | Type |
+  |---|---|
+  | `payload` | `UpsertPayload` |
+  | **Returns** | `Effect< CollectionSchema, VectorDBError \| DimensionMismatch >` |
+
+- #### `upsertMany`
+  Bulk upsert multiple documents efficiently.
+  | Parameter | Type |
+  |---|---|
+  | `payloads` | `ReadonlyArray< UpsertPayload >` |
+  | **Returns** | `Effect< ReadonlyArray< CollectionSchema >, VectorDBError \| DimensionMismatch >` |
+
+- #### `search`
+  Semantic similarity search using vector distance. Results are ordered by score descending.
+  | Parameter | Type |
+  |---|---|
+  | `queryVector` | `Vector` |
+  | `limit` | `number` |
+  | `filter` | `QueryFilter` (optional) |
+  | **Returns** | `Effect< ReadonlyArray< SearchResult >, VectorDBError \| DimensionMismatch >` |
+
+- #### `getById`
+  Retrieves a document by its ID. Fails with `DocumentNotFound` if the ID does not exist.
+  | Parameter | Type |
+  |---|---|
+  | `id` | `DocumentId` |
+  | **Returns** | `Effect< CollectionSchema, VectorDBError \| DocumentNotFound >` |
+
+- #### `findById`
+  Retrieves a document by its ID. Returns an `Option` instead of failing if the ID is missing.
+  | Parameter | Type |
+  |---|---|
+  | `id` | `DocumentId` |
+  | **Returns** | `Effect< Option< CollectionSchema >, VectorDBError >` |
+
+- #### `delete`
+  Deletes a document by ID. Fails with `DocumentNotFound` if the ID does not exist.
+  | Parameter | Type |
+  |---|---|
+  | `id` | `DocumentId` |
+  | **Returns** | `Effect< void, VectorDBError \| DocumentNotFound >` |
+
+- #### `deleteWhere`
+  Deletes multiple documents matching a filter.
+  | Parameter | Type |
+  |---|---|
+  | `filter` | `QueryFilter` |
+  | **Returns** | `Effect< number, VectorDBError >` (count of deleted docs) |
+
+- #### `list`
+  Retrieves a list of documents matching an optional filter and pagination settings.
+  | Parameter | Type |
+  |---|---|
+  | `filter` | `QueryFilter` (optional) |
+  | `pagination` | `Pagination` (optional) |
+  | **Returns** | `Effect< ReadonlyArray< CollectionSchema >, VectorDBError >` |
+
+- #### `count`
+  Returns the number of documents matching an optional filter.
+  | Parameter | Type |
+  |---|---|
+  | `filter` | `QueryFilter` (optional) |
+  | **Returns** | `Effect< number, VectorDBError >` |
+
+- #### `pruneExpired`
+  Removes all documents where `expires_at` is less than or equal to the provided date.
+  | Parameter | Type |
+  |---|---|
+  | `asOf` | `Date` |
+  | **Returns** | `Effect< number, VectorDBError >` (count of deleted docs) |

@@ -1,0 +1,96 @@
+---
+title: 'Schemas'
+description: 'Effect Schema definitions for Cortex data models, queries, and errors.'
+---
+
+Cortex uses [Effect Schema](https://effect.website/docs/schema/introduction) for all its data structures, providing runtime validation and type safety.
+
+## Core Types
+
+### `DocumentId`
+A branded string used to uniquely identify documents in the database.
+```typescript
+import { DocumentId } from "@cortex/cortex"
+
+const id = DocumentId.make("user-123")
+```
+
+### `Vector`
+A branded `Array<number>` representing the embedding vector. The length must match the `dimension` configured in your adapter.
+```typescript
+import { Vector } from "@cortex/cortex"
+
+const vector = Vector.make([0.1, 0.2, ...])
+```
+
+## Data Models
+
+### `CollectionSchema`
+The internal representation of a document stored in the database.
+| Field | Type | Description |
+|---|---|---|
+| `id` | `DocumentId` | Unique identifier |
+| `content` | `string` | The text content |
+| `category` | `string` | Indexable category |
+| `tags` | `string[]` | Indexable tags |
+| `metadata_json` | `string` | Arbitrary JSON metadata |
+| `created_at` | `Date` | Insertion timestamp |
+| `expires_at` | `Date` | TTL expiration timestamp |
+
+### `UpsertPayload`
+The input structure for `upsert` and `upsertMany` operations.
+| Field | Type | Description |
+|---|---|---|
+| `id` | `DocumentId` | Unique identifier |
+| `content` | `string` | The text content to store |
+| `category` | `string` | Category for filtering |
+| `tags` | `string` | Single string (converted to array internally) |
+| `metadata_json` | `string` | JSON string for extra data |
+| `vector` | `Vector` | The embedding vector |
+| `expires_at` | `Date` | When this record should expire |
+
+### `SearchResult`
+Returned by the `search` method.
+```typescript
+interface SearchResult {
+  readonly document: CollectionSchema
+  readonly score: number // 0 to 1 (similarity)
+}
+```
+
+## Query Types
+
+### `QueryFilter`
+Used to filter documents during search, list, or delete operations.
+| Field | Type | Description |
+|---|---|---|
+| `category` | `string` (optional) | Match documents in this category |
+| `tags` | `string[]` (optional) | Match if any of these tags are present |
+| `activeAt` | `Date` (optional) | Only include docs expiring after this date |
+
+### `Pagination`
+Used to paginate results in the `list` method.
+```typescript
+interface Pagination {
+  readonly limit: number
+  readonly offset: number
+}
+```
+
+## Errors
+
+All errors in Cortex are `TaggedError` classes.
+
+### `VectorDBError`
+Generic storage or adapter error.
+- `message`: `string`
+- `cause`: `unknown` (optional)
+
+### `DocumentNotFound`
+Thrown when an operation expects a document to exist (e.g., `getById`, `delete`).
+- `id`: `DocumentId`
+
+### `DimensionMismatch`
+Thrown when a provided vector's length does not match the configured dimension.
+- `expected`: `number`
+- `actual`: `number`

@@ -3,44 +3,47 @@ title: Core Concepts
 description: Understand the architecture and key abstractions
 ---
 
-## VectorStore
+## VectorDB
 
-`VectorStore` is the central abstraction. It defines a protocol for storing, retrieving, searching, and deleting vector entries.
+`VectorDB` is the central service. It defines high-level operations for vector lifecycle management.
 
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `store` | `(id, vector, metadata) => Effect<void, VectorStoreErrors>` | Upsert a vector + metadata |
-| `search` | `(queryVector, options) => Effect<SearchResult[], VectorStoreErrors>` | Nearest-neighbour search with filters |
-| `getEntry` | `(id) => Effect<StoredEntry, VectorStoreErrors>` | Fetch by ID (fails with `VectorNotFoundError`) |
-| `deleteEntry` | `(id) => Effect<void, VectorStoreErrors>` | Remove entry (no-op if missing) |
-| `size` | `Effect<number, VectorStoreErrors>` | Total stored vectors |
+| Method | Description |
+|--------|-------------|
+| `upsert` | Insert or update a single document |
+| `upsertMany` | Bulk upsert documents |
+| `search` | Nearest-neighbour search with filters |
+| `getById` | Fetch by ID (fails with `DocumentNotFound`) |
+| `delete` | Remove entry by ID |
+| `pruneExpired` | Clean up documents past their `expires_at` |
 
-## SearchOptions
+## CollectionSchema
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `limit` | `number` (1–1000) | `10` | Max results |
-| `category` | `string` | - | Filter by category |
-| `tags` | `string[]` | - | Filter by tags |
+The schema for documents stored in the database:
 
-Expired entries (by `expiresAt`) are always excluded from search results.
+```typescript
+{
+  id: DocumentId,           // Branded string
+  content: string,          // Primary text content
+  category: string,         // Indexable category
+  tags: string[],           // Indexable tags
+  metadata_json: string,    // Arbitrary JSON string
+  created_at: Date,
+  expires_at: Date
+}
+```
+
+## QueryFilter
+
+Filters applied during `search`, `list`, or `deleteWhere`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `category` | `string` | Match by category |
+| `tags` | `string[]` | Match if any tag is present |
+| `activeAt` | `Date` | Only include docs expiring after this date |
 
 ## Error Types
 
-- **`VectorStoreError`** - Storage operation failed
-- **`VectorNotFoundError`** - Entry not found (`_tag: "VectorNotFoundError"`)
-- **`VectorDecodeError`** - Data corruption on read
-
-## VectorMetadata
-
-Each vector entry stores metadata alongside the vector:
-
-```typescript
-new VectorMetadata({
-  content: "string describing the vector",
-  category: "preferences",         // for filtering
-  tags: ["lang", "typescript"],    // for filtering
-  metadata: {},                    // arbitrary JSON data
-  expiresAt: null,                 // optional TTL (Date)
-})
-```
+- **`VectorDBError`** - General storage failure
+- **`DocumentNotFound`** - Entry not found by ID
+- **`DimensionMismatch`** - Vector length doesn't match DB config
