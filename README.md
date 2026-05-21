@@ -5,14 +5,14 @@ The ORM for vector databases, built with [Effect](https://effect.website) and [Z
 ## Install
 
 ```bash
-bun add @cortex/cortex @cortex/zvec
+bun add @thaletto/cortex @thaletto/zvec
 ```
 
 ## Quick Start
 
 ```typescript
 import { Effect } from "effect";
-import { VectorDB, DocumentId, Vector } from "@cortex/cortex";
+import { VectorDB, DocumentId, Vector } from "@thaletto/cortex";
 
 const program = Effect.gen(function* () {
   const db = yield* VectorDB;
@@ -50,7 +50,7 @@ const program = Effect.gen(function* () {
 Persistent, in-process vector database with WAL persistence. Configured via `ZvecSdkConfig`:
 
 ```typescript
-import { ZvecVectorDBLive, ZvecSdkLive, ZvecSdkConfig } from "@cortex/zvec";
+import { ZvecVectorDBLive, ZvecSdkLive, ZvecSdkConfig } from "@thaletto/zvec";
 
 const layer = Layer.provide(
   ZvecVectorDBLive,

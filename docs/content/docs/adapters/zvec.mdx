@@ -16,7 +16,7 @@ The `DefaultVectorDBLive` layer comes pre-configured with sensible defaults:
 - **Dimension**: `384`
 
 ```typescript
-import { DefaultVectorDBLive } from "@cortex/zvec";
+import { DefaultVectorDBLive } from "@thaletto/zvec";
 
 const CortexLive = DefaultVectorDBLive;
 ```
@@ -27,7 +27,7 @@ If you need to change the path, dimensionality, or other settings, use `VectorDB
 
 ```typescript
 import { Layer } from "effect";
-import { VectorDBLive, ZvecSdkConfig } from "@cortex/zvec";
+import { VectorDBLive, ZvecSdkConfig } from "@thaletto/zvec";
 
 const CortexLive = VectorDBLive.pipe(
   Layer.provide(Layer.succeed(ZvecSdkConfig, { 

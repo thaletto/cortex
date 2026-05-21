@@ -43,4 +43,4 @@ export class VectorDB extends Context.Service<VectorDB, {
 
     readonly count: (filter?: QueryFilter) =>
         Effect.Effect<number, VectorDBError>
-}>()("@cortex/cortex/services/vector-db") { }
+}>()("@thaletto/cortex/services/vector-db") { }

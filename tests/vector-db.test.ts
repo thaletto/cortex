@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "@effect/vitest"
 import { Effect, Layer, FileSystem, Option } from "effect"
 import { NodeFileSystem, NodePath } from "@effect/platform-node"
-import { CollectionSchema, type SearchResult, VectorDB, DocumentId, Vector, DocumentNotFound } from "@cortex/cortex"
-import { ZvecVectorDBLive, ZvecSdkLive, ZvecSdkConfig, decodeZvecSdkConfig } from "@cortex/zvec"
+import { CollectionSchema, type SearchResult, VectorDB, DocumentId, Vector, DocumentNotFound } from "@thaletto/cortex"
+import { ZvecVectorDBLive, ZvecSdkLive, ZvecSdkConfig, decodeZvecSdkConfig } from "@thaletto/zvec"
 
 const DIM = 128
 const TEST_DIR = ".cortex"

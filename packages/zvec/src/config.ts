@@ -38,7 +38,7 @@ export type ZvecSdkConfigShape = Schema.Schema.Type<typeof ZvecSdkConfigSchema>
 
 export const decodeZvecSdkConfig = Schema.decodeEffect(ZvecSdkConfigSchema)
 
-export class ZvecSdkConfig extends Context.Service<ZvecSdkConfig, ZvecSdkConfigShape>()("@cortex/zvec/ZvecSdkConfig", {
+export class ZvecSdkConfig extends Context.Service<ZvecSdkConfig, ZvecSdkConfigShape>()("@thaletto/zvec/ZvecSdkConfig", {
     make: decodeZvecSdkConfig({
         path: ".cortex/zvec",
         collectionName: "cortex",

@@ -9,7 +9,7 @@ import { ZvecVectorDBLive } from "./vector-db.ts"
  * It requires ZvecSdkConfig to be provided in the environment.
  * 
  * @example
- * import { VectorDBLive, ZvecSdkConfig } from "@cortex/zvec"
+ * import { VectorDBLive, ZvecSdkConfig } from "@thaletto/zvec"
  * import { Layer } from "effect"
  * 
  * const layer = VectorDBLive.pipe(

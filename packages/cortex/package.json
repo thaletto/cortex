@@ -1,5 +1,5 @@
 {
-  "name": "@cortex/cortex",
+  "name": "@thaletto/cortex",
   "version": "1.0.0",
   "type": "module",
   "module": "src/index.ts",

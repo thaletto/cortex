@@ -6,7 +6,7 @@ description: Install, configure, and use Cortex step by step
 ## Installation
 
 ```bash
-bun add @cortex/cortex @cortex/zvec
+bun add @thaletto/cortex @thaletto/zvec
 ```
 
 Cortex requires `effect` v4 as a peer dependency.
@@ -17,7 +17,7 @@ All operations in Cortex happen through the `VectorDB` service. You define your 
 
 ```typescript
 import { Effect } from "effect";
-import { VectorDB, DocumentId, Vector } from "@cortex/cortex";
+import { VectorDB, DocumentId, Vector } from "@thaletto/cortex";
 
 const program = Effect.gen(function* () {
   const db = yield* VectorDB;
@@ -60,7 +60,7 @@ Cortex uses Effect's tagged errors for robust error handling.
 
 ```typescript
 import { Effect } from "effect";
-import { VectorDB, DocumentId } from "@cortex/cortex";
+import { VectorDB, DocumentId } from "@thaletto/cortex";
 
 const program = Effect.gen(function* () {
   const db = yield* VectorDB;

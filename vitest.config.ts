@@ -7,13 +7,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   resolve: {
     alias: {
-      "@cortex/cortex": path.resolve(__dirname, "packages/cortex/src"),
-      "@cortex/zvec": path.resolve(__dirname, "packages/zvec/src"),
+      "@thaletto/cortex": path.resolve(__dirname, "packages/cortex/src"),
+      "@thaletto/zvec": path.resolve(__dirname, "packages/zvec/src"),
     },
   },
   ssr: {
     external: ["@zvec/zvec"],
-    noExternal: ["@cortex/cortex", "@cortex/zvec"],
+    noExternal: ["@thaletto/cortex", "@thaletto/zvec"],
   },
   test: {
     include: ["tests/**/*.test.ts"],

@@ -10,7 +10,7 @@ Cortex uses [Effect Schema](https://effect.website/docs/schema/introduction) for
 ### `DocumentId`
 A branded string used to uniquely identify documents in the database.
 ```typescript
-import { DocumentId } from "@cortex/cortex"
+import { DocumentId } from "@thaletto/cortex"
 
 const id = DocumentId.make("user-123")
 ```
@@ -18,7 +18,7 @@ const id = DocumentId.make("user-123")
 ### `Vector`
 A branded `Array<number>` representing the embedding vector. The length must match the `dimension` configured in your adapter.
 ```typescript
-import { Vector } from "@cortex/cortex"
+import { Vector } from "@thaletto/cortex"
 
 const vector = Vector.make([0.1, 0.2, ...])
 ```

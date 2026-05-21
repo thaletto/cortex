@@ -8,7 +8,7 @@ import {
     type ZVecInitOptions,
 } from "@zvec/zvec"
 import { Context, Effect, FileSystem, Layer, Path } from "effect"
-import { VectorDBError } from "@cortex/cortex"
+import { VectorDBError } from "@thaletto/cortex"
 import { VECTOR_FIELD } from "./constants.ts"
 import { ZvecSdkConfig } from "./config.ts"
 import { makeCollectionSchema } from "./schema.ts"
@@ -18,7 +18,7 @@ let initialized = false
 export class ZvecSdk extends Context.Service<ZvecSdk, {
     readonly collection: RawZVecCollection
     readonly dimension: number
-}>()("@cortex/zvec/ZvecSdk") { }
+}>()("@thaletto/zvec/ZvecSdk") { }
 
 const ensureInitialized = Effect.fn("zvec.ensureInitialized")(function* (options: ZVecInitOptions | undefined) {
     yield* Effect.sync(function initializeZvec() {

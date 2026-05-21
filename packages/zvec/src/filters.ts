@@ -1,4 +1,4 @@
-import type { QueryFilter } from "@cortex/cortex"
+import type { QueryFilter } from "@thaletto/cortex"
 
 function escapeFilterValue(value: string): string {
     return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'")

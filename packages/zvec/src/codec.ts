@@ -3,7 +3,7 @@ import {
     CollectionSchema,
     type DocumentId,
     type UpsertPayload,
-} from "@cortex/cortex"
+} from "@thaletto/cortex"
 import { VECTOR_FIELD } from "./constants.ts"
 import { Effect } from "effect"
 

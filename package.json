@@ -1,5 +1,5 @@
 {
-  "name": "cortex",
+  "name": "thaletto",
   "private": true,
   "workspaces": ["packages/*"],
   "version": "1.0.0",
@@ -14,8 +14,8 @@
     "docs:build": "bun run --cwd docs build"
   },
   "devDependencies": {
-    "@cortex/cortex": "workspace:*",
-    "@cortex/zvec": "workspace:*",
+    "@thaletto/cortex": "workspace:*",
+    "@thaletto/zvec": "workspace:*",
     "@effect/language-service": "^0.86.2",
     "@effect/platform-bun": "^4.0.0-beta.70",
     "@effect/platform-node": "^4.0.0-beta.70",

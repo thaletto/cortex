@@ -5,7 +5,7 @@ import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
 import TextType from "@/components/TextType";
 import ShinyText from "@/components/ShinyText";
 
-const codeExample = `bun add @cortex/cortex`;
+const codeExample = `bun add @thaletto/cortex`;
 
 export default function HomePageContent() {
   const easeOut = "cubic-bezier(0.23, 1, 0.32, 1)";

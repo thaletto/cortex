@@ -1,7 +1,7 @@
 import type { ZVecCollection as RawZVecCollection, ZVecStatus } from "@zvec/zvec"
 import { Effect, Layer, Option } from "effect"
 
-import { VectorDB } from "@cortex/cortex"
+import { VectorDB } from "@thaletto/cortex"
 
 import {
     DimensionMismatch,
@@ -13,7 +13,7 @@ import {
     type UpsertPayload,
     type Vector,
     VectorDBError,
-} from "@cortex/cortex"
+} from "@thaletto/cortex"
 
 import {
     payloadToCollectionSchema,
