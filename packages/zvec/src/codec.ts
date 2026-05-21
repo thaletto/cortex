@@ -1,18 +1,12 @@
-/**
- * @file @/src/adapters/zvec/codec.ts
- * Conversions between cortex domain types and zvec wire format.
- */
-
 import type { ZVecDoc, ZVecDocInput } from "@zvec/zvec"
 import {
     CollectionSchema,
     type DocumentId,
     type UpsertPayload,
-} from "../../schema/index.ts"
+} from "@cortex/cortex"
 import { VECTOR_FIELD } from "./constants.ts"
 import { Effect } from "effect"
 
-/** Convert an `UpsertPayload` into the wire format expected by the zvec SDK. */
 export const toZvecDoc = Effect.fn("toZvecDoc")(function* (payload: UpsertPayload, createdAt: Date) {
     return {
         id: payload.id,
@@ -30,7 +24,6 @@ export const toZvecDoc = Effect.fn("toZvecDoc")(function* (payload: UpsertPayloa
     } as ZVecDocInput
 })
 
-/** Convert a raw zvec document into a `CollectionSchema`. */
 export const toCollectionSchema = Effect.fn("toCollectionSchema")(function* (doc: ZVecDoc) {
     return new CollectionSchema({
         id: doc.id as DocumentId,
@@ -45,7 +38,6 @@ export const toCollectionSchema = Effect.fn("toCollectionSchema")(function* (doc
     })
 })
 
-/** Build a `CollectionSchema` directly from an `UpsertPayload`, without going through zvec storage. */
 export const payloadToCollectionSchema = Effect.fn("payloadToCollectionSchema")(function* (payload: UpsertPayload, createdAt: Date) {
     return new CollectionSchema({
         id: payload.id,

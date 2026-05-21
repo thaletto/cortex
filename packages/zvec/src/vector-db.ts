@@ -1,12 +1,7 @@
-/**
- * @file @/src/adapters/zvec/vector-db.ts
- * Implementation of the `VectorDB` service interface backed by a zvec collection.
- */
-
 import type { ZVecCollection as RawZVecCollection, ZVecStatus } from "@zvec/zvec"
 import { Effect, Layer, Option } from "effect"
 
-import { VectorDB } from "../../services/vector-db.ts"
+import { VectorDB } from "@cortex/cortex"
 
 import {
     DimensionMismatch,
@@ -18,7 +13,7 @@ import {
     type UpsertPayload,
     type Vector,
     VectorDBError,
-} from "../../schema/index.ts"
+} from "@cortex/cortex"
 
 import {
     payloadToCollectionSchema,
@@ -36,7 +31,6 @@ import {
 
 import { ZvecSdk } from "./sdk.ts"
 
-/** Fail with a `VectorDBError` if the zvec operation status signals a failure. */
 const checkStatus = Effect.fn("zvec.checkStatus")(function* (
     status: ZVecStatus,
     message: string
@@ -48,7 +42,6 @@ const checkStatus = Effect.fn("zvec.checkStatus")(function* (
     }
 })
 
-/** Fail with a `VectorDBError` if any status in an array signals a failure. */
 const checkStatuses = Effect.fn("zvec.checkStatuses")(function* (
     statuses: ReadonlyArray<ZVecStatus>,
     message: string
@@ -62,7 +55,6 @@ const checkStatuses = Effect.fn("zvec.checkStatuses")(function* (
     }
 })
 
-/** Fail with a `DimensionMismatch` error if the vector length does not match the collection dimension. */
 const ensureVectorDimension = Effect.fn("zvec.ensureVectorDimension")(function* (
     vector: Vector,
     dimension: number
@@ -75,7 +67,6 @@ const ensureVectorDimension = Effect.fn("zvec.ensureVectorDimension")(function* 
     }
 })
 
-/** Validate that every payload's vector matches the collection dimension. */
 const ensurePayloadDimensions = Effect.fn("zvec.ensurePayloadDimensions")(function* (
     payloads: ReadonlyArray<UpsertPayload>,
     dimension: number
@@ -85,7 +76,6 @@ const ensurePayloadDimensions = Effect.fn("zvec.ensurePayloadDimensions")(functi
     }
 })
 
-/** Fetch all documents matching the optional filter and pagination settings. */
 const queryAll = Effect.fn("zvec.queryAll")(function* (
     collection: RawZVecCollection,
     filter: QueryFilter | undefined,
@@ -117,7 +107,6 @@ const queryAll = Effect.fn("zvec.queryAll")(function* (
     return docs.slice(offset, offset + limit)
 })
 
-/** Create an effect that fetches a single document by ID, returning `Option.none()` when missing. */
 const makeFindById = (
     collection: RawZVecCollection
 ) =>
@@ -138,7 +127,6 @@ const makeFindById = (
             : Option.some(yield* toCollectionSchema(doc))
     })
 
-/** Create an effect that fetches a single document by ID, failing with `DocumentNotFound` when missing. */
 const makeGetById = (
     findById: ReturnType<typeof makeFindById>
 ) =>
@@ -152,7 +140,6 @@ const makeGetById = (
         return maybeDocument.value
     })
 
-/** Create an effect that upserts a single document. */
 const makeUpsert = (
     collection: RawZVecCollection,
     dimension: number
@@ -184,7 +171,6 @@ const makeUpsert = (
         )
     })
 
-/** Create an effect that upserts multiple documents in a batch. */
 const makeUpsertMany = (
     collection: RawZVecCollection,
     dimension: number
@@ -225,7 +211,6 @@ const makeUpsertMany = (
         )
     })
 
-/** Create an effect that deletes a single document by ID. */
 const makeDeleteById = (
     collection: RawZVecCollection,
     getById: ReturnType<typeof makeGetById>
@@ -248,7 +233,6 @@ const makeDeleteById = (
         )
     })
 
-/** Create an effect that deletes documents matching a filter, returning the count removed. */
 const makeDeleteWhere = (
     collection: RawZVecCollection
 ) =>
@@ -280,7 +264,6 @@ const makeDeleteWhere = (
         return deleted
     })
 
-/** Create an effect that performs a vector similarity search. */
 const makeSearch = (
     collection: RawZVecCollection,
     dimension: number
@@ -324,7 +307,6 @@ const makeSearch = (
         )
     })
 
-/** Create an effect that lists documents, optionally filtered and paginated. */
 const makeList = (
     collection: RawZVecCollection
 ) =>
@@ -344,7 +326,6 @@ const makeList = (
         )
     })
 
-/** Create an effect that removes expired documents. */
 const makePruneExpired = (
     collection: RawZVecCollection
 ) =>
@@ -388,7 +369,6 @@ const makePruneExpired = (
         return deleted
     })
 
-/** Create an effect that counts documents, optionally filtered. */
 const makeCount = (
     collection: RawZVecCollection
 ) =>
@@ -416,7 +396,6 @@ const makeCount = (
         ).length
     })
 
-/** Layer providing the `VectorDB` service backed by a zvec collection. */
 export const ZvecVectorDBLive = Layer.effect(
     VectorDB,
     Effect.gen(function* () {

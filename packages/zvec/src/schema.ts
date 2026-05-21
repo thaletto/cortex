@@ -1,8 +1,3 @@
-/**
- * @file @/src/adapters/zvec/schema.ts
- * Build the zvec collection schema with the standard cortex field layout.
- */
-
 import {
     ZVecCollectionSchema,
     ZVecDataType,
@@ -14,7 +9,6 @@ import { Effect } from "effect"
 
 import { VECTOR_FIELD } from "./constants.ts"
 
-/** Build a `ZVecCollectionSchema` with the standard field layout used by cortex. */
 export const makeCollectionSchema = Effect.fn("zvec.makeCollectionSchema")(function* (
     name: string,
     dimension: number

@@ -5,8 +5,8 @@
 import { Console, Effect, FileSystem, Layer } from "effect"
 import { BunRuntime, BunFileSystem, BunPath } from "@effect/platform-bun"
 
-import { VectorDB, DocumentId, Vector } from "@/index"
-import { VectorDBLive } from "@/adapters/zvec/index"
+import { VectorDB, DocumentId, Vector } from "@cortex/cortex"
+import { VectorDBLive } from "@cortex/zvec"
 
 const in30Days = () => new Date(Date.now() + 30 * 864e5)
 
