@@ -36,7 +36,7 @@ export const ZvecSdkConfigSchema = Schema.Struct({
 })
 export type ZvecSdkConfigShape = Schema.Schema.Type<typeof ZvecSdkConfigSchema>
 
-export const decodeZvecSdkConfig = Schema.decodeUnknownEffect(ZvecSdkConfigSchema)
+export const decodeZvecSdkConfig = Schema.decodeEffect(ZvecSdkConfigSchema)
 
 export class ZvecSdkConfig extends Context.Service<ZvecSdkConfig, ZvecSdkConfigShape>()("@/adapters/zvec/ZvecSdkConfig", {
     make: decodeZvecSdkConfig({
