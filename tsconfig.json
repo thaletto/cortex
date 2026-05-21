@@ -9,9 +9,8 @@
     "jsx": "react-jsx",
     "allowJs": true,
     
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
 
     "allowImportingTsExtensions": true,
