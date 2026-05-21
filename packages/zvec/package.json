@@ -10,9 +10,9 @@
   "dependencies": {
     "@zvec/zvec": "^0.4.0"
   },
-  "peerDependencies": {
-    "@cortex/cortex": "workspace:*",
-    "typescript": "^6.0.3",
-    "effect": "^4.0.0-beta.66"
-  }
+    "peerDependencies": {
+     "@cortex/cortex": "workspace:*",
+     "typescript": "^6.0.3",
+     "effect": "^4.0.0-beta.70"
+   }
 }
