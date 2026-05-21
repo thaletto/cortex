@@ -25,7 +25,6 @@ export function baseOptions(): BaseLayoutProps {
           <Image src="/cortex-logo.svg" alt="Logo" width={108} height={108} />
         </>
       ),
-      transparentMode: 'top'
     },
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
     links: [
