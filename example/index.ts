@@ -1,4 +1,7 @@
-/** @file Example: bulk-upsert + search-quality evaluation against a biomedical claim dataset. */
+/**
+ * @file @/example/index.ts
+ * Example: bulk-upsert + search-quality evaluation against a biomedical claim dataset.
+ */
 import { Console, Effect, FileSystem, Layer } from "effect"
 import { BunRuntime, BunFileSystem, BunPath } from "@effect/platform-bun"
 

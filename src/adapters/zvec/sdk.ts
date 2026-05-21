@@ -1,3 +1,8 @@
+/**
+ * @file @/src/adapters/zvec/sdk.ts
+ * Open or create a zvec collection and expose it as an Effect service.
+ */
+
 import {
     ZVecCreateAndOpen,
     ZVecInitialize,
@@ -15,11 +20,13 @@ import { makeCollectionSchema } from "./schema.ts"
 
 let initialized = false
 
+/** Holds an open zvec collection handle and its configured dimension. */
 export class ZvecSdk extends Context.Service<ZvecSdk, {
     readonly collection: RawZVecCollection
     readonly dimension: number
 }>()("@/adapters/zvec/ZvecSdk") { }
 
+/** Ensure the zvec runtime is initialized (no-op after the first call). */
 const ensureInitialized = Effect.fn("zvec.ensureInitialized")(function* (options: ZVecInitOptions | undefined) {
     yield* Effect.sync(function initializeZvec() {
         if (initialized) {
@@ -34,6 +41,7 @@ const ensureInitialized = Effect.fn("zvec.ensureInitialized")(function* (options
     })
 })
 
+/** Layer that opens or creates a zvec collection and exposes it as a `ZvecSdk` service. */
 export const ZvecSdkLive = Layer.effect(
     ZvecSdk,
     Effect.gen(function* () {
