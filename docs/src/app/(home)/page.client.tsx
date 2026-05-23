@@ -2,8 +2,8 @@
 import { useTheme } from "fumadocs-ui/provider/base";
 import dynamic from "next/dynamic";
 
-const MeshGradient = dynamic(
-  () => import("@paper-design/shaders-react").then((mod) => mod.MeshGradient),
+const GrainGradient = dynamic(
+  () => import("@paper-design/shaders-react").then((mod) => mod.GrainGradient),
   {
     ssr: false,
   },
@@ -13,14 +13,19 @@ export function Hero() {
   const { resolvedTheme } = useTheme();
   return (
     <>
-      <MeshGradient
-        className="absolute inset-0 animate-fdanimate-fd-fade-in duration-800"
+      <GrainGradient
+        className="absolute inset-0 animate-fd-fade-in duration-800"
         colors={
           resolvedTheme === "dark"
-            ? ["#1F6B10", "#5A1A03", "#2A1A0000"]
-            : ["#E8E87A", "#F5C49A", "#E8C8A010"]
+            ? ["#39BE1C", "#9c2f05", "#7A2A0000"]
+            : ["#fcfc51", "#ffa057", "#7A2A0020"]
         }
-        speed={0.5}
+        colorBack="#00000000"
+        softness={2}
+        intensity={0.4}
+        noise={0.2}
+        speed={1}
+        shape="wave"
         minPixelRatio={1}
         maxPixelCount={1920 * 1080}
       />
