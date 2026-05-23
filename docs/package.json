@@ -13,6 +13,9 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
+    "@hugeicons/core-free-icons": "^4.1.4",
+    "@hugeicons/react": "^1.1.6",
+    "@paper-design/shaders-react": "^0.0.76",
     "@react-three/fiber": "^9.3.0",
     "@react-three/postprocessing": "^3.0.4",
     "class-variance-authority": "^0.7.1",
@@ -21,7 +24,6 @@
     "fumadocs-mdx": "15.0.7",
     "fumadocs-ui": "npm:@fumadocs/base-ui@16.8.12",
     "gsap": "^3.13.0",
-    "lucide-react": "^1.16.0",
     "motion": "^12.23.12",
     "next": "16.2.6",
     "ogl": "^1.0.11",

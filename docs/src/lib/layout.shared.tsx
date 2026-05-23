@@ -1,28 +1,14 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import { appName, gitConfig } from "./shared";
 import Image from "next/image";
-
-const NpmIcon = () => (
-  <svg
-    viewBox="0 0 2500 2500"
-    xmlns="http://www.w3.org/2000/svg"
-    width="20"
-    height="20"
-  >
-    <path fill="#c00" d="M0 0h2500v2500H0z" />
-    <path
-      fill="#fff"
-      d="M1241.5 268.5h-973v1962.9h972.9V763.5h495v1467.9h495V268.5z"
-    />
-  </svg>
-);
+import Npm from "@/components/icons/Npm";
 
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
       title: (
         <>
-          <Image src="/cortex-logo.svg" alt="Logo" width={108} height={108} />
+          <p className="text-2xl">Cortex</p>
         </>
       ),
       transparentMode: 'top',
@@ -32,13 +18,13 @@ export function baseOptions(): BaseLayoutProps {
       {
         type: "icon",
         label: "npm",
-        icon: <NpmIcon />,
+        icon: <Npm />,
         text: "npm",
         url: `https://www.npmjs.com/package/@${gitConfig.user}/${gitConfig.repo}`,
       },
     ],
     themeSwitch: {
-      enabled: false,
+      enabled: true,
     }
   };
 }
