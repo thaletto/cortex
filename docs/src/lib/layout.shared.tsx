@@ -14,7 +14,7 @@ export function baseOptions(): BaseLayoutProps {
           <p className="text-2xl">Cortex</p>
         </>
       ),
-      transparentMode: "top",
+      transparentMode: "always",
     },
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
     links: [
