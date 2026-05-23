@@ -17,8 +17,8 @@ export function Hero() {
         className="absolute inset-0 animate-fdanimate-fd-fade-in duration-800"
         colors={
           resolvedTheme === "dark"
-            ? ["#39BE1C", "#9C2F05", "#7A2A0000"]
-            : ["#FCFC51", "#FFA057", "#7A2A0020"]
+            ? ["#1F6B10", "#5A1A03", "#2A1A0000"]
+            : ["#E8E87A", "#F5C49A", "#E8C8A010"]
         }
         speed={0.5}
         minPixelRatio={1}
