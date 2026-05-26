@@ -37,9 +37,9 @@ const buttonVariants = cva(
 
 export default function HomePage() {
   const packageManagers = [
-    { name: "npm", cmd: "npm install @cortex/cortex" },
-    { name: "pnpm", cmd: "pnpm add @cortex/cortex" },
-    { name: "bun", cmd: "bun add @cortex/cortex" },
+    { name: "npm", cmd: "npm install @thaletto/cortex" },
+    { name: "pnpm", cmd: "pnpm add @thaletto/cortex" },
+    { name: "bun", cmd: "bun add @thaletto/cortex" },
   ];
   return (
     <main className="text-foreground h-[calc(100vh-56px)]">
