@@ -32,16 +32,16 @@ export const Pagination = Schema.Struct({
 })
 export type Pagination = Schema.Schema.Type<typeof Pagination>
 
-export class VectorDBError extends Schema.TaggedErrorClass<VectorDBError>()("VectorDBError", {
+export class VectorDBError extends Schema.TaggedError<VectorDBError>()("VectorDBError", {
     message: Schema.String,
     cause: Schema.optional(Schema.Unknown)
 }){}
 
-export class DocumentNotFound extends Schema.TaggedErrorClass<DocumentNotFound>()("DocumentNotFound", {
+export class DocumentNotFound extends Schema.TaggedError<DocumentNotFound>()("DocumentNotFound", {
     id: DocumentId
 }){}
 
-export class DimensionMismatch extends Schema.TaggedErrorClass<DimensionMismatch>()("DimensionMismatch", {
+export class DimensionMismatch extends Schema.TaggedError<DimensionMismatch>()("DimensionMismatch", {
     expected: Schema.Number,
     actual: Schema.Number
 }){}
