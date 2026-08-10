@@ -1,4 +1,4 @@
-# thaletto-jobs
+# AGENTS.md
 
 ## Commands
 
@@ -22,3 +22,17 @@ To update later: `git -C ~/.local/share/effect-solutions/effect pull --depth 1`
 - Never type annotate an Effect for example `sample: Effect.Effect<number, string, never>`
 - Always create Service and Layers while creating a module, check documentation by running `bunx effect-solutions services-and-layers`
 - If unsure about using Effect check the local repository, for quick information to core concepts run `bunx effect-solutions list`
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in Linear (team A-Developer-Company, project Cortex), driven by the Linear CLI — see `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix` — see `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `CONTEXT.md` + `docs/adr/` — see `docs/agents/domain.md`.
