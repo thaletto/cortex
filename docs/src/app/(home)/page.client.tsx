@@ -1,9 +1,10 @@
 "use client";
+import { Dithering } from "@paper-design/shaders-react";
 import { useTheme } from "fumadocs-ui/provider/base";
 import dynamic from "next/dynamic";
 
 const GrainGradient = dynamic(
-  () => import("@paper-design/shaders-react").then((mod) => mod.GrainGradient),
+  () => import("@paper-design/shaders-react").then((mod) => mod.Dithering),
   {
     ssr: false,
   },
@@ -13,21 +14,17 @@ export function Hero() {
   const { resolvedTheme } = useTheme();
   return (
     <>
-      <GrainGradient
+      <Dithering
         className="absolute inset-0 animate-fd-fade-in duration-800"
-        colors={
-          resolvedTheme === "dark"
-            ? ["#39BE1C", "#9c2f05", "#7A2A0000"]
-            : ["#fcfc51", "#ffa057", "#7A2A0020"]
-        }
-        colorBack="#00000000"
-        softness={2}
-        intensity={0.4}
-        noise={0.2}
-        speed={1}
+        colorBack={resolvedTheme === "dark" ? "#000" : "#FFF"}
+        colorFront="#5C8AFF"
         shape="wave"
-        minPixelRatio={1}
-        maxPixelCount={1920 * 1080}
+        type="4x4"
+        size={1.8}
+        speed={0.54}
+        scale={0.36}
+        offsetX={-0.26}
+        offsetY={0.24}
       />
     </>
   );
